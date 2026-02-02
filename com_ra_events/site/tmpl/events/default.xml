@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<metadata>
+    <layout title="List Specific Events" option="View">
+        <message>
+                        <![CDATA[List all future Events of the chosen type]]>
+        </message>
+    </layout>
+    <fields name="request">
+        <fieldset 
+            name="request"
+            label="Type of Events to list">
+            <field
+                name="event_type_id"
+                query="SELECT `id`, `description`, `ordering` FROM #__ra_event_types WHERE state=1 AND (id IN ('2', '3', '4','5')) 
+UNION SELECT 0 AS `id`, 'All types' AS `description` , 0 AS `ordering`ORDER BY `ordering`"
+                type="sql"
+                key_field="id" 
+                value_field="description"
+                label="Select type"
+                require="true"
+                description="Select the type of events">
+            </field>
+        </fieldset>
+    </fields>	
+</metadata>

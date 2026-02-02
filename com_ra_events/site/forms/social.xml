@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+  <fieldset 
+    addfieldprefix="Ramblers\Component\Ra_tools\Administrator\Field"
+    addruleprefix="Ramblers\Component\Ra_tools\Administrator\Rule"
+  >     
+    <field name="event_date" class="inputbox" format="%Y-%m-%d" timeformat="12" 
+           filter="user_utc" translateformat="false" 
+           showtime="false" singleheader="false" 
+           todaybutton="false" weeknumbers="false" 
+           filltable="false" type="calendar" required="true" 
+           label="Date" description="Date of the Event" hint="YY-MM-DD"/>
+    <field name="event_time" 
+           default="19:00" 
+           size="5" 
+           maxlength="5" 
+           filter="safehtml" 
+           type="text" 
+           required="true" 
+           validate="Timefield" 
+           label="Time" 
+           description="Time the Event starts" 
+           hint="HH:MM"/>
+    
+    <field name="event_type_id" 
+           type="hidden"/>
+    
+    <field name="description" size="50" maxlength="50" filter="safehtml" 
+           type="text" label="Title" description="Brief description of the Event"/>
+    
+    <field name="group_code" filter="safehtml" type="text" required="true" 
+           validate="Areagroupcode" 
+           label="Group code" description="Code for the Group running the Event" hint="AA99"/>
+    
+<!-- type specific fields -->
+    <field name="location" filter="safehtml" type="text" 
+           label="Location" description="Where the Event is taking place"/>
+    
+    <field name="contact_id" type="foreignkey" 
+           label="Contact" 
+           description="Member with responsibility for organising the Event"
+           input_type="list" 
+           table="#__contact_details" 
+           key_field="id" translate="true" 
+           value_field="name"/>
+    
+    <field name="details" type="editor" buttons="true" class="inputbox" 
+           filter="safehtml" label="Details" 
+           description="Details of the Event"/>
+
+<!-- more common fields -->
+    <field name="attachments" 
+           directory="media/com_ra_events" 
+           type="filelist" 
+           label="Attachment" 
+           description="File with extra information" 
+           hidden="false" />
+    <field name="attachment_description" 
+           filter="safehtml" 
+           type="text" 
+           label="Description" 
+           description="Brief description of the attached file"/>
+    <field name="url" 
+           validate="url" 
+           type="url" 
+           label="Weblink" 
+           description="Link to a separate web page"/>
+    <field name="url_description" 
+           filter="safehtml" type="text" 
+           label="Description" 
+           showon="url:"
+           description="Brief description of the link"/>    
+<!-- end of common fields -->
+
+<!-- Audit fields -->
+       <field
+            name="created"
+            type="calendar"
+            label="Created"
+            description="Date created"
+            readonly="true"
+            timeformat="24" 
+            filter="user_utc" 
+            format="%H:%M.%S %d-%m-%Y"   
+            default=""
+            />
+       <field
+            name="created_by"
+            type="user"
+            label="Created by"
+            description="User that created the record"
+            readonly="true"
+            default=""
+            />
+       <field
+            name="modified"
+            type="calendar"
+            label="Updated"
+            readonly="true"
+            timeformat="24" 
+            filter="user_utc" 
+            format="%Y-%m-%d %H:%M.%S"   
+            default=""
+            />
+       <field
+            name="modified_by"
+            type="user"
+            label="Updated by"
+            description="User that last updated the record"
+            readonly="true"
+            default=""
+            />    
+<!-- hidden fields -->         
+   <field name="id" type="text" readonly="true" class="readonly" default="0" description="JGLOBAL_FIELD_ID_DESC"/>
+    
+    <field name="state" default="1" type="list" label="JSTATUS" description="JFIELD_PUBLISHED_DESC" class="inputbox" size="1">
+      <option value="1">JPUBLISHED</option>
+      <option value="0">JUNPUBLISHED</option>
+    </field>
+
+    <field name="checked_out_time" type="hidden" filter="unset"/>
+    
+     
+  </fieldset>
+</form>
+

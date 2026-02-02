@@ -1,0 +1,39 @@
+# Joomla extension build
+nbproject/
+*.log
+*.tmp
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+node_modules/
+.env
+.env.*
+*.bak
+*.old
+*.zip
+*.tar.gz
+*.tar.bz2
+*.tar
+*.gz
+*.7z
+*.rar
+*.lock
+composer.lock
+package-lock.json
+yarn.lock
+coverage/
+dist/
+build/
+.cache/
+*.iml
+*.sublime*
+*.code-workspace
+# Ignore OS generated files
+Icon?
+# Ignore Joomla cache and temp
+/tmp/
+/cache/
+/logs/

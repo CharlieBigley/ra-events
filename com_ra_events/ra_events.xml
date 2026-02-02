@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 16/09/23 CB Created from mailman
+    15/06/25 CB added api (version 2.1.0)
+    29/06/25 CB new version of src (API interface)
+    01/09/25 CB changed folder name from src to api
+    02/10/25 CB version 2.3.0 - bespoike fields on events/bookings
+-->
+<extension type="component" version="4.0" method="upgrade">
+    <name>RA Events</name>
+    <element>com_ra_events</element>
+    <creationDate>13 Nov 2025</creationDate>
+    <copyright>Copyright (C) 2022. All rights reserved.</copyright>
+    <license>GNU General Public License version 2 or later; see LICENSE.txt</license>
+    <author>Charlie Bigley</author>
+    <authorEmail>webmaster@bigley.me.uk</authorEmail>
+    <authorUrl>https://docs.stokeandnewcastleramblers.org.uk</authorUrl>
+    <version>2.4.1</version>
+    <description>Support for Events and Bookings</description>
+    <namespace path="src">Ramblers\Component\Ra_events</namespace>   
+    <scriptfile>script.php</scriptfile>	
+    <api>
+        <files folder="api">
+            <folder>src</folder>
+        </files>
+    </api>
+    <files folder="site">
+        <folder>forms</folder>
+        <folder>src</folder>
+        <folder>tmpl</folder> 
+    </files>
+    <media folder="media" destination="com_ra_events">
+        <filename>joomla.asset.json</filename>
+    </media>
+	
+    <administration>
+        <menu link="option=com_ra_events&amp;view=events">RA Events</menu>
+        <files folder="administrator">
+            <folder>forms</folder>
+            <folder>languages</folder>
+            <folder>presets</folder>
+            <folder>services</folder>
+            <folder>sql</folder>
+            <folder>src</folder>
+            <folder>tmpl</folder>   
+            <filename>access.xml</filename>
+            <filename>config.xml</filename>            
+        </files>
+    </administration>
+	
+    <!-- Runs on install -->
+    <install>
+        <sql>
+            <file driver="mysql" charset="utf8">sql/install.mysql.utf8.sql</file>
+        </sql>
+    </install>
+    <!-- Runs on uninstall -->
+    <uninstall>
+        <sql>
+            <file driver="mysql" charset="utf8">sql/uninstall.mysql.utf8.sql</file>
+        </sql>
+    </uninstall>
+    <!-- Runs on update -->
+    <update>
+        <schemas>
+            <schemapath type="mysql">sql/updates/mysql/</schemapath>
+        </schemas>
+    </update>
+</extension>

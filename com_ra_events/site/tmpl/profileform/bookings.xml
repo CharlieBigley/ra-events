@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<metadata>
+    <layout title="Show bookings" option="View">
+        <message>
+                        <![CDATA[Show booking details for the current user]]>
+        </message>
+    </layout>
+    <fields name="params">
+        <fieldset name="basic">
+            <field name="note1" type="note" label="This menu option should only be visible to users that have logged in"/>
+            <field
+                name="page_intro"
+                type="textbox"
+                label="Page Introduction"
+                description="Text to be shown before the details"
+                default=""
+            />                                                     
+                <field name="note2" type="note" label="For information about this component please visit: https://docs.stokeandnewcastleramblers.org.uk and read the Webmasters Guide"/>
+            </fieldset>
+    </fields>
+</metadata>
+

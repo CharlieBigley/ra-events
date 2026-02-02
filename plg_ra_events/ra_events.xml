@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+	09/06/25 MK 1.0.3,  WebAPI stuff
+-->
+<extension type="plugin" group="webservices"  method="upgrade">
+    <name>PLG_WEBSERVICES_PLG_RA_EVENTS</name>
+    <author>Martin King</author>
+    <creationDate>24 Sept 2025</creationDate>
+    <copyright>2025 Martin King</copyright>
+    <license>GNU General Public License version 2 or later; see LICENSE.txt</license>
+    <authorEmail>martinkingesra@gmail.com</authorEmail>
+    <authorUrl>https://eaststaffsramblers.org</authorUrl>
+    <version>1.0.5</version>
+    <description>PLG_WEBSERVICES_PLG_RA_EVENTS_XML_DESCRIPTION</description>
+	
+	<namespace path="src">Ramblers\Plugin\WebServices\Ra_events</namespace>
+
+    <files>
+       <folder plugin="ra_events">services</folder>
+        <folder>src</folder>
+    </files>
+	
+     <languages>       
+			<language tag="en-GB">language/en-GB/plg_webservices_ra_events.ini</language>
+			<language tag="en-GB">language/en-GB/plg_webservices_ra_events.sys.ini</language>
+    </languages>
+ 
+</extension>
+
+

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form addfieldprefix="Ramblers\Component\Ra_events\Administrator\Field">
+  <fieldset>
+    <field name="checked_out" type="hidden" filter="unset"/>
+    <field name="checked_out_time" type="hidden" filter="unset"/>
+    <field name="id" label="ID" type="text" readonly="true" class="readonly" default="0"/>
+    <field name="state" default="0" type="list" label="JSTATUS" description="JFIELD_PUBLISHED_DESC" class="inputbox" size="1">
+      <option value="1">Confirmed</option>
+      <option value="0">Provisional</option>
+      <option value="-2">Cancelled</option>
+    </field>
+    <field
+        name="event_id"
+        type="sql"
+        label="Event"
+        sql_select="id, CONCAT(group_code,' ',title) as `event`" 
+        sql_from="`#__ra_events` WHERE bookable AND DATEDIFF(event_date, CURRENT_DATE)>=0" 
+        key_field="id" 
+        value_field="event"
+        required="true"
+    /> 
+    <field name="special_request"  type="text" 
+           label="Special request" 
+           description="E.g. dietary requirement or access (cannot be guaranteed)"/>        
+    <field name="custom1"  type="text" 
+           label="custom1" />    
+    <field name="custom2"  type="text" 
+           label="custom2" />    
+    <field
+        name="user_id"
+        type="sql"
+        label="User"
+        sql_select="p.id, preferred_name"
+        sql_join="#__users AS u ON u.id = p.id" 
+        sql_from="`#__ra_profiles`AS p" 
+        sql_fwhere="u.block=0" 
+        sql_order="preferred_name" 
+        key_field="id" 
+        value_field="preferred_name"
+        required="true"
+    />        
+    <field name="num_places" default="1" type="radio" required="true" 
+           label="Places" 
+           description="Number of places">
+      <option value="1">One place</option>
+      <option value="2">Two Places</option>
+    <field name="partner" 
+           maxlength="50" 
+           filter="safehtml" 
+           type="text" 
+           label="Other" 
+           description="The name of the second person" 
+           showon="num_places:2"/>
+    </field>
+    <field name="created"
+           type="readonly" 
+           label="Date created" 
+           description="" />
+    <field name="creator"
+           type="readonly" 
+           label="Created by" 
+           description="" />
+    
+    <field name="confirmed"
+           type="readonly" 
+           label="Date confirmed" 
+           description="" />
+    <field name="confirmor"
+           type="readonly" 
+           label="Confirmed by" 
+           description="" />        
+    <field name="cancelled"
+           type="readonly" 
+           label="Date cancelled" 
+           description="" />
+    <field name="cancellor"
+           type="readonly" 
+           label="Cancelled by" 
+           description="" />
+    <field name="version_note" type="text" label="JGLOBAL_FIELD_VERSION_NOTE_LABEL" description="JGLOBAL_FIELD_VERSION_NOTE_DESC" class="inputbox" size="45" labelclass="control-label"/>
+  </fieldset>
+</form>

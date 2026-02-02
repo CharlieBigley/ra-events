@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+    <fields name="filter">
+        <field name="search" type="text" hint="Search"
+               label="Search"
+               class="js-stools-search-string" />       
+    </fields>
+    <fields name="list">
+
+        <field name="fullordering"
+               type="list"
+               label="COM_RA_EVENTS_LIST_FULL_ORDERING"
+               description="COM_RA_EVENTS_LIST_FULL_ORDERING_DESC"
+               onchange="this.form.submit();"
+               default="a.id DESC"
+        >
+            <option value="">JGLOBAL_SORT_BY</option>
+            <option value="p.home_group ASC">Group Ascending</option>
+            <option value="p.home_group DESC">Group Descending</option>
+            <option value="p.preferred_name ASC">Name Ascending</option>
+            <option value="p.preferred_name DESC">Name Descending</option>
+            <option value="b.partner ASC">Other Ascending</option>
+            <option value="b.partner DESC">Other Descending</option> 
+            <option value="b.title ASC">Status Ascending</option>
+            <option value="b.title DESC">Status Descending</option>  
+            <option value="u.id ASC">ID Ascending</option>
+            <option value="u.id DESC">ID Descending</option>
+
+        </field>
+
+       <field name="limit"
+               type="limitbox"
+               label="COM_RA_EVENTS_LIST_LIMIT"
+               description="COM_RA_EVENTS_LIST_LIMIT_DESC"
+               class="input-mini"
+               default="25"
+               onchange="this.form.submit();"
+        />
+
+    </fields>
+</form>

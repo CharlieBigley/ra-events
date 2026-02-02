@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<metadata>
+	<layout title="My Emails" option="View">
+		<message>
+			<![CDATA[List Emails send or received for the given user]]>
+		</message>
+	</layout>
+	<config>
+		<fields name="params">
+			<fieldset name="basic">
+                            <!-- Define your basic params for the view here 
+                                 They will appear as an "Options" tab when creating a front-end menu entry -->
+                            <field name="note01" type="note" label="Should only be shown when a user has logged on" />                               
+			</fieldset>
+		</fields>
+	</config>
+</metadata>
+
+
+

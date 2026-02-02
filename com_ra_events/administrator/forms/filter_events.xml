@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+    <fields name="filter">
+        <field name="search" type="text" 
+               label="COM_USERS_FILTER_SEARCH_DESC"
+               description="Search term"
+               class="js-stools-search-string" />
+        <field name="event_type_id" 
+            label="Type" 
+            description="Type of Event" 
+            type="sql" 
+            header="- Select type -"
+            sql_select="id, description" 
+            sql_from="#__ra_event_types" 
+            key_field="id" 
+            value_field="description"
+            onchange="this.form.submit();"/>
+        <field name="state"
+               type="list"
+               label="State"
+               description="Status"
+               onchange="this.form.submit();"
+        >
+            <option value="1">Published </option>
+            <option value="0">Unpublished </option>
+            <option value="">All Events </option>
+        </field>
+        
+    </fields>
+
+    <fields name="list">
+
+        <field name="fullordering"
+               type="list"
+               label="COM_RA_EVENTS_LIST_FULL_ORDERING"
+               description="COM_RA_EVENTS_LIST_FULL_ORDERING_DESC"
+               onchange="this.form.submit();"
+               default="a.event_date DESC"
+        >
+            <option value="">JGLOBAL_SORT_BY</option>
+            <option value="a.event_date ASC">Date Ascending</option>
+            <option value="a.event_date DESC">Date Descending</option>
+            <option value="a.event_time ASC">Time Ascending</option>
+            <option value="a.event_time DESC">Time Descending</option>
+            <option value="a.location ASC">Location Ascending</option>
+            <option value="a.location DESC">Location Descending</option>            
+            <option value="a.title ASC">Title Ascending</option>
+            <option value="a.title DESC">Title Descending</option>
+            <option value="a.group_code ASC">Group Ascending</option>
+            <option value="a.group_code DESC">Group Descending</option>
+            <option value="a.id ASC">ID Ascending</option>
+            <option value="a.id DESC">ID Descending</option>
+        </field>
+
+       <field name="limit"
+               type="limitbox"
+               label="COM_RA_EVENTS_LIST_LIMIT"
+               description="COM_RA_EVENTS_LIST_LIMIT_DESC"
+               class="input-mini"
+               default="25"
+               onchange="this.form.submit();"
+        />
+
+    </fields>
+
+</form>
