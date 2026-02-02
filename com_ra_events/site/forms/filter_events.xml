@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+    <fields name="filter">
+        <field name="search" type="text" hint="Search"
+               label="Search"
+               class="js-stools-search-string" />
+    </fields>
+    <fields name="list">
+
+       <field name="limit"
+               type="limitbox"
+               label="Limit"
+               description="Number of records to show on each page"
+               class="input-mini"
+               default="25"
+               onchange="this.form.submit();"
+        />
+
+    </fields>
+</form>

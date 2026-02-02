@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+  <fieldset 
+    addfieldprefix="Ramblers\Component\Ra_tools\Administrator\Field"
+    addruleprefix="Ramblers\Component\Ra_tools\Administrator\Rule"
+  > 
+    
+    <field name="event_type_id" type="foreignkey" label="Event type" 
+           description="Event type" default="1" 
+           input_type="list" 
+           table="#__ra_event_types" 
+           key_field="id" translate="true" 
+           value_field="description" 
+           required="true"/>      
+    <field name="event_date" class="inputbox" format="%Y-%m-%d" timeformat="12" 
+           filter="user_utc" translateformat="false" 
+           showtime="false" singleheader="false" 
+           todaybutton="false" weeknumbers="false" 
+           filltable="false" type="calendar" required="true" 
+           label="Date" description="Date of the Event" hint="YY-MM-DD"/>
+        <field name="event_time" 
+           default="19:00" 
+           size="5" 
+           maxlength="5" 
+           filter="safehtml" 
+           type="text" 
+           required="true" 
+           validate="Timefield" 
+           label="Time" 
+           description="Time the Event starts" 
+           hint="HH:MM"/>
+    
+    <field name="title" size="50" maxlength="50" filter="safehtml" 
+           type="text" 
+           label="Title" 
+           required="true" 
+           description="Brief description of the Event"/>
+
+    <field
+        name="group_code"
+        type="textfield"
+        label="Group code"
+        description="Group code, Area code, or NAT for a national event"
+        required="true"
+        validation="Areagroupcode"
+        hint="AA99"
+    />
+          
+   <field name="id" type="text" readonly="true" class="readonly" default="0" description="JGLOBAL_FIELD_ID_DESC"/>
+    
+    <field name="state" default="1" type="list" label="JSTATUS" description="JFIELD_PUBLISHED_DESC" class="inputbox" size="1">
+      <option value="1">JPUBLISHED</option>
+      <option value="0">JUNPUBLISHED</option>
+    </field>
+
+    <field name="checked_out_time" type="hidden" filter="unset"/>
+    
+     
+  </fieldset>
+</form>
+
+
+

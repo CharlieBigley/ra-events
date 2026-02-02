@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<metadata>
+    <layout title="List Committee Meetings" option="View">
+        <message>
+                        <![CDATA[List all Events of type Committee Meetings]]>
+        </message>
+    </layout>
+    <fields name="request">
+        <fieldset 
+            name="request"
+            label="Type of Events to list">
+            <field
+                name="event_type_id"
+                query="SELECT `id`, `description` FROM #__ra_event_types WHERE id=1 ORDER BY `ordering`"
+                type="sql"
+                key_field="id" 
+                value_field="description"
+                label="Select type"
+                require="true"
+                description="Select the type of events">
+            </field>
+        </fieldset>
+    </fields>	
+</metadata>

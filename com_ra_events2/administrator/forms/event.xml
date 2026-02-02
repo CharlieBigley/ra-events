@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form addfieldprefix="Ramblers\Component\Ra_tools\Administrator\Field">
+  <fieldset addruleprefix="Ramblers\Component\Ra_tools\Administrator\Rule">
+    <field name="id" 
+           type="text" 
+           label="ID"
+           readonly="true" class="readonly" 
+           default="0" 
+           caption="ID"
+           description="JGLOBAL_FIELD_ID_DESC"/>
+    <field name="state" default="1" type="list" label="JSTATUS" description="JFIELD_PUBLISHED_DESC" class="inputbox" size="1">
+      <option value="1">JPUBLISHED</option>
+      <option value="0">JUNPUBLISHED</option>
+    </field>
+    <field name="event_type_id" 
+           type="foreignkey" 
+           label="Type" 
+           description="Type of Event" 
+           default="" 
+           input_type="list" 
+           table="#__ra_event_types" 
+           key_field="id" 
+           translate="true" 
+           value_field="description" 
+           required="true"/>    
+    <field name="event_date" 
+           class="inputbox"       
+           label="Date" 
+           description="Date of the Event"
+           type="calendar" singleheader="false" todaybutton="false" weeknumbers="false" filltable="true" 
+           filter="user_utc" translateformat="false" showtime="false" format="%Y-%m-%d" timeformat="12"  
+           required="true"         
+           hint="YYYY-MM-DD"/>
+    <field name="event_date_end" 
+           class="inputbox"       
+           label="Last Date" 
+           description="Last date of the holiday"           
+           type="calendar" singleheader="false" todaybutton="false" weeknumbers="false" filltable="true" 
+           filter="user_utc" translateformat="false" showtime="false" format="%Y-%m-%d" timeformat="12"  
+           hint="YYYY-MM-DD"/>
+    <field name="event_time" 
+           default="19:00" 
+           size="5" 
+           maxlength="5" 
+           filter="safehtml" 
+           type="text" 
+           required="true"  
+           validate="Timefield" 
+           label="Time" 
+           description="Time the Event start" 
+           hint="HH:MM"/>
+    <field name="contact_id_old" 
+           type="foreignkey" 
+           label="Contact" 
+           description="Contact name" 
+           default="" 
+           input_type="list" 
+           table="#__contact_details" 
+           key_field="id" 
+           translate="true" 
+           fk_ordering="name" 
+           value_field="name" 
+           required="true"/>    
+    <field
+        name="contact_id"
+        type="sql"
+        label="Contact"
+        description="Contact name" 
+        sql_select=" p.preferred_name"      
+        sql_from="`#__contact_details`AS c" 
+        sql_join="#__ra_profiles AS p ON p.id = c.user_id" 
+        sql_where="c.published=1 AND p.preferred_name IS NOT NULL"
+        sql_order="preferred_name" 
+        key_field="id" 
+        value_field="preferred_name"
+    /> 
+    <field name="title" size="50" maxlength="50" filter="safehtml" type="text" 
+           label="Title" 
+           description="Title of the Event"
+           required="true" />
+    <field name="group_code" filter="safehtml" type="text" 
+           label="Group code" 
+           description="Four character Group code, or two character Area code" 
+           hint="XX01"/>
+    <field name="location" 
+           filter="safehtml" type="text" 
+           label="Location" 
+           description="Where the Event is being held"/>
+    <field name="details" 
+           type="editor" 
+           buttons="true" 
+           class="inputbox" 
+           filter="safehtml" 
+           label="Details" 
+           description="Description of the Event"/>
+ 
+    <field name="reports" type="editor" buttons="true" class="inputbox" filter="safehtml" 
+           label="Reports" 
+           description="Reports from the Officers"/>
+    <field name="minutes" 
+           type="editor" 
+           buttons="true" 
+           class="inputbox" filter="safehtml" 
+           label="Minutes" 
+           description="Minutes of the meeting"/>
+    <field name="url" 
+           validate="url" 
+           type="url" 
+           label="Weblink" 
+           description="Link to a related website" 
+           />
+    <field name="url_description" 
+           filter="safehtml" type="text" 
+           label="Weblink desc" 
+           description="Description of the link"/>
+    <field name="attachments"  
+           directory="images/com_ra_events"  
+           type="file" 
+           label="Attachment" description="File to be included" />
+  
+    <field name="attachment_description" 
+           filter="safehtml" 
+           type="text" 
+           label="Attachment desc" 
+           description="Description of the attachment" 
+           hint="Attachment"/>
+    <field
+        name="bookable"
+        type="radio"
+        label="Bookable"
+        description="Are bookings required for this event"
+        class="btn-group btn-group-yesno"
+        default="O"
+        >
+            <option value="1">JYES</option>
+            <option value="0">JNO</option>
+    </field>
+    <field name="max_bookings" 
+           size="5" 
+           maxlength="3" 
+           filter="int" type="text" 
+           showon="bookable:1"
+           label="Max Bookings" 
+           description="Maximum number of bookings acceptable for the Event"
+           />
+    <field
+        name="notify_organiser"
+        type="radio"
+        label="Notify organiser"
+        description="If Yes, an email will be sent to the Organiser whenever a booking is made "
+        showon="bookable:1"
+        class="btn-group btn-group-yesno"
+        default="0"
+        >
+            <option value="1">JYES</option>
+            <option value="0">JNO</option>
+    </field>    
+    <field name="booking_info" 
+           type="editor" 
+           buttons="true" 
+           class="inputbox" 
+           filter="safehtml" 
+           label="Booking information" 
+           showon="bookable:1"
+           description="Message to be shown when a booking is made, e.g. payment details"
+        default="Send payment by bank transfer"/>
+    <field
+        name="shareable"
+        type="radio"
+        label="Shareable"
+        description="Can this event be shared via the website interface"
+        class="btn-group btn-group-yesno"
+        default="O"
+        >
+            <option value="1">JYES</option>
+            <option value="0">JNO</option>
+    </field>
+    <field name="api_site_id" 
+           filter="int" type="text" 
+           readonly="true" class="readonly" 
+           showon="bookable:1"
+           label="API site" 
+           description="Reference to the list of API sites"
+           />
+    <field name="original_id" 
+           filter="int" type="text" 
+           readonly="true" class="readonly" 
+           showon="bookable:1"
+           label="Original id" 
+           description="ID from the originating site"
+           /> 
+    <field name="share_date" 
+           class="inputbox"       
+           type="calendar" singleheader="false" todaybutton="true" weeknumbers="false" filltable="true" 
+           filter="user_utc" translateformat="false" showtime="false" format="%Y-%m-%d" timeformat="12"       
+           label="Share Date" 
+           description="Event will not be available to the API before this date"
+           showon="shareable:1"
+           hint="YYYY-MM-DD"/> 
+    <field name="publication_date" 
+           class="inputbox"       
+           type="calendar" singleheader="false" todaybutton="true" weeknumbers="false" filltable="true" 
+           filter="user_utc" translateformat="false" showtime="false" format="%Y-%m-%d" timeformat="12"       
+           label="Publication Date" 
+           description="Event will not be displayed before this date"
+           hint="YYYY-MM-DD"/>
+    <field
+            name="created"
+            type="calendar"
+            label="Created"
+            description="Date created"
+            readonly="true"
+            timeformat="24" 
+            filter="user_utc" 
+            format="%H:%M.%S %d-%m-%Y"   
+            default=""
+            />
+       <field
+            name="created_by"
+            type="user"
+            label="Created by"
+            description="User that created the record"
+            readonly="true"
+            />
+       <field
+            name="modified"
+            type="calendar"
+            label="Updated"
+            readonly="true"
+            timeformat="24" 
+            filter="user_utc" 
+            format="%H:%M.%S %d-%m-%Y" 
+            />
+       <field
+            name="modified_by"
+            type="user"
+            label="Updated by"
+            description="User that last updated the record"
+            readonly="true"
+            default=""
+            />    
+        <field name="api_site_id" 
+               type="text" 
+               label="api_site_id"
+               readonly="true" class="readonly" 
+               default="0" 
+               caption="ID"
+               description="api_site_id"/> 
+        <field name="email" 
+               type="text" 
+               label="email"
+               readonly="true" class="readonly" 
+               default="0" 
+               caption="email"
+               description="email"/> 
+
+        <field name="checked_out_time" type="hidden" filter="unset"/>
+    <field name="version_note" type="text" label="JGLOBAL_FIELD_VERSION_NOTE_LABEL" description="JGLOBAL_FIELD_VERSION_NOTE_DESC" class="inputbox" size="45" labelclass="control-label"/>
+  </fieldset>
+</form>

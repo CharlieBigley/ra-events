@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<metadata>
+    <layout title="List all future Events" option="View">
+        <message>
+                        <![CDATA[List future Events of all types]]>
+        </message>
+    </layout>
+    <fields name="request">
+        <fieldset 
+            name="request"
+            label="All Events">
+            <field
+                name="event_type_id"
+                query="SELECT 0 AS `id`, 'All types' AS `description`"
+                type="sql"
+                key_field="id" 
+                value_field="description"
+                label="Select type"
+                require="true"
+                description="Select the type of events">
+            </field>
+        </fieldset>
+    </fields>	
+</metadata>
+

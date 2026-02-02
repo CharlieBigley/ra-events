@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 16/09/23 CB Created from mailman
+    20/09/23 CB remove menu entries for Reports / Configuration
+    09/10/23 CB add admin/languages
+    20/11/24 CB version 1.2.0
+    30/11/24 CB version 1.2.1
+    02/12/24 CB version 1.2.2 description->title, deleted redundant code, new updatesql, comment out script
+    05/12/24 Cb reinstate script
+    10/12/25 CB correct sort order in 1.2.4
+    18/12/24 CB correct validation of holiday end date in 1.2.5
+    16/01/25 CB rebuilt 1.2.6 using user_utc for dates
+    30/01/25 CB 1.2.7: tidy config, rename editing tab to Publishing
+    09/02/25 CB 1.2.8: include access file to set permissions
+    10/02/25 CB 1.2.9: correction for event date / time
+    19/02/25 CB 1.3.0: getCurrentUser
+    10/03/25 CB 1.3.3: Bookings
+    24/03/25 CB 1.3.5, with script
+    09/04/25 CB 1.3.9
+-->
+<extension type="component" version="4.0" method="upgrade">
+    <name>RA Events</name>
+    <element>com_ra_events</element>
+    <creationDate>08 Sep 2025</creationDate>
+    <copyright>Copyright (C) 2022. All rights reserved.</copyright>
+    <license>GNU General Public License version 2 or later; see LICENSE.txt</license>
+    <author>Charlie Bigley</author>
+    <authorEmail>webmaster@bigley.me.uk</authorEmail>
+    <authorUrl>https://docs.stokeandnewcastleramblers.org.uk</authorUrl>
+    <version>2.2.0</version>
+    <description>Support for Events and Bookings</description>
+    <namespace path="src">Ramblers\Component\Ra_events</namespace>
+    
+	<!-- scriptfile>script.php</scriptfile -->
+	
+	<api>
+		<files folder="api">
+			<folder>src</folder>
+		</files>
+	</api>
+		
+    <files folder="site">
+        <folder>forms</folder>
+        <folder>src</folder>
+        <folder>tmpl</folder> 
+    </files>
+	
+    <media folder="media" destination="com_ra_events">
+        <filename>joomla.asset.json</filename>
+    </media>
+	
+    <administration>
+        <menu link="option=com_ra_events&amp;view=events">RA Events</menu>
+        <files folder="administrator">
+            <folder>forms</folder>
+            <folder>languages</folder>
+            <folder>presets</folder>
+            <folder>services</folder>
+            <folder>sql</folder>
+            <folder>src</folder>
+            <folder>tmpl</folder>   
+            <filename>access.xml</filename>
+            <filename>config.xml</filename>            
+        </files>
+    </administration>
+	
+    <!-- Runs on install -->
+    <install>
+        <sql>
+            <file driver="mysql" charset="utf8">sql/install.mysql.utf8.sql</file>
+        </sql>
+    </install>
+    <!-- Runs on uninstall -->
+    <uninstall>
+        <sql>
+            <file driver="mysql" charset="utf8">sql/uninstall.mysql.utf8.sql</file>
+        </sql>
+    </uninstall>
+    <!-- Runs on update -->
+    <update>
+        <schemas>
+            <schemapath type="mysql">sql/updates/mysql/</schemapath>
+        </schemas>
+    </update>
+</extension>

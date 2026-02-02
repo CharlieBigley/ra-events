@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form addfieldprefix="Ramblers\Component\Ra_tools\Administrator\Field">
+  <fieldset addruleprefix="Ramblers\Component\Ra_tools\Administrator\Rule">
+     <field name="details" 
+           type="editor" 
+           buttons="true" 
+           class="inputbox" 
+           filter="safehtml" 
+           label="Agenda" 
+           description="Agenda for the meeting"/>
+    <field name="id" type="text" readonly="true" class="readonly" default="0" description="JGLOBAL_FIELD_ID_DESC"/>
+<!-- Audit fields: must be included - used by Table / bind -->
+       <field
+            name="created"
+            type="hidden"
+            label="Created"
+            description="Date created"
+            readonly="true"
+            timeformat="24" 
+            filter="user_utc" 
+            format="%H:%M.%S %d-%m-%Y"   
+            default=""
+            />
+       <field
+            name="created_by"
+            type="hidden"
+            label="Created by"
+            description="User that created the record"
+            readonly="true"
+            default=""
+            />
+       <field
+            name="modified"
+            type="hidden"
+            label="Updated"
+            readonly="true"
+            timeformat="24" 
+            filter="user_utc" 
+            format="%Y-%m-%d %H:%M.%S"   
+            default=""
+            />
+       <field
+            name="modified_by"
+            type="hidden"
+            label="Updated by"
+            description="User that last updated the record"
+            readonly="true"
+            default=""
+            />    
+
+    <field name="checked_out_time" type="hidden" filter="unset"/>
+  </fieldset>
+</form>

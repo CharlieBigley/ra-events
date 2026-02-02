@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension type="module" version="3.0" client="site" method="upgrade">
+    <name>RA Events Sidebar</name>
+    <author>Charlie Bigley - Staffordshire Ramblers</author>
+    <creationDate>29 Sep 2025</creationDate>
+    <copyright>Copyleft 2023 Charlie Bigley</copyright>
+    <license>This extension in released under the GNU/GPL License</license>
+    <authorEmail>webmaster@bigley.me.uk</authorEmail>
+    <authorUrl>staffordshireramblers.org.uk</authorUrl>
+    <version>2.0.3</version>
+    <description>This module enables the display of forthcoming events in a sidebar module</description>
+    <namespace>Joomla\Module\Ra_events</namespace>
+    <help url="docs.stokeandnewcastleramblers.org.uk" />
+    <files>
+        <filename module="mod_ra_events">mod_ra_events.php</filename>
+        <filename>index.html</filename>
+        <folder>tmpl</folder>
+    </files>
+    <config>
+       <fields name="params">
+            <fieldset name="basic">
+                <field name="note1" 
+                    type="note" 
+                    label="For information about this module please visit: https://docs.stokeandnewwcastleramblers.org.uk and read the Guide to Ramblers Events"
+                />
+               
+                <field name="restrict_events" 
+                      type="radio" 
+                      default="0" 
+                      label="Restrict list of events">                               
+                   <option value="0">Show all events</option>
+                   <option value="1">Restrict by number</option>
+                   <option value="2">Restrict by weeks</option>
+               </field>  
+               <field name="limit" 
+                      type="text" 
+                      default="50" 
+                      size="4" 
+                      label="Max number to display (0=no limit)" 
+                      description="Maximum number of events to include in the display" 
+                      showon="restrict_events:1"
+               />
+               <field name="lookahead_weeks" 
+                      type="text" 
+                      default="12" 
+                      size="3" 
+                      label="Max weeks to display (0=no limit)" 
+                      description="Maximum number of weeks to look ahead" 
+                      showon="restrict_events:2"
+               />  
+            </fieldset>
+            <fieldset name="advanced">
+                <field name="layout"
+                    type="modulelayout"
+                    label="JFIELD_ALT_LAYOUT_LABEL"
+                    description="JFIELD_ALT_MODULE_LAYOUT_DESC"
+                />
+                <field name="moduleclass_sfx"
+                    type="text"
+                    label="COM_MODULES_FIELD_MODULECLASS_SFX_LABEL"
+                    description="COM_MODULES_FIELD_MODULECLASS_SFX_DESC"
+                />
+            </fieldset>
+        </fields>
+    </config>
+</extension>

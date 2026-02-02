@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+    <fields name="filter">
+        <field name="search" type="text" 
+               description="Search term"
+               label="COM_USERS_FILTER_SEARCH_DESC"
+               class="js-stools-search-string" />
+        <field name="state" default="" type="list" label="JSTATUS" 
+               description="JFIELD_PUBLISHED_DESC" class="inputbox" size="1" 
+                onchange="this.form.submit();">
+            <option value="">- Select State -</option>
+          <option value="1">Confirmed</option>
+          <option value="0">Provisional</option>
+          <option value="-2">Cancelled</option>
+    </field>
+    <field name="num_places" label="Places" type="list" onchange="this.form.submit();" default="Number of places">
+  <option value="">- Number of places -</option>
+  <option value="1">Single place</option>
+  <option value="2">Two places</option>
+</field>
+
+
+    </fields>
+
+    <fields name="list">
+
+        <field name="fullordering"
+               type="list"
+               label="COM_RA_EVENTS_LIST_FULL_ORDERING"
+               description="COM_RA_EVENTS_LIST_FULL_ORDERING_DESC"
+               onchange="this.form.submit();"
+               default="a.id DESC"
+        >
+            <option value="">JGLOBAL_SORT_BY</option>
+            <option value="a.state ASC">Status ASC</option>
+            <option value="a.state DESC">Status DESC</option>
+            <option value="e.title ASC">Event ASC</option>
+            <option value="e.title DESC">Event DESC</option>
+            <option value="p.preferred_name ASC">Name ASC</option>
+            <option value="p.preferred_name DESC">Name DESC</option>
+            <option value="a.num_places ASC">Num places ASC</option>
+            <option value="a.num_places DESC">Num places DESC</option>                                             
+            <option value="a.partner ASC">Additional person ASC</option>
+            <option value="a.partner DESC">Additional person DESC</option>
+            <option value="a.id ASC">ID ASC</option>
+            <option value="a.id DESC">ID DESC</option>  
+        </field>
+
+       <field name="limit"
+               type="limitbox"
+               label="COM_RA_EVENTS_LIST_LIMIT"
+               description="COM_RA_EVENTS_LIST_LIMIT_DESC"
+               class="input-mini"
+               default="25"
+               onchange="this.form.submit();"
+        />
+
+    </fields>
+
+</form>

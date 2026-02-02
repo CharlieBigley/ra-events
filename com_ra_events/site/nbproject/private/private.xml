@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project-private xmlns="http://www.netbeans.org/ns/project-private/1">
+    <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="35">
+        <file>
+            <url>src/Helpers/EventsHelper.php</url>
+            <bookmark id="25">
+                <name/>
+                <line>194</line>
+                <key/>
+            </bookmark>
+            <bookmark id="24">
+                <name/>
+                <line>214</line>
+                <key/>
+            </bookmark>
+            <bookmark id="23">
+                <name/>
+                <line>371</line>
+                <key/>
+            </bookmark>
+            <bookmark id="27">
+                <name/>
+                <line>398</line>
+                <key/>
+            </bookmark>
+            <bookmark id="28">
+                <name/>
+                <line>455</line>
+                <key/>
+            </bookmark>
+        </file>
+        <file>
+            <url>src/View/Bookingform/HtmlView.php</url>
+            <bookmark id="14">
+                <name/>
+                <line>100</line>
+                <key/>
+            </bookmark>
+        </file>
+        <file>
+            <url>src/Controller/BookingController.php</url>
+            <bookmark id="29">
+                <name/>
+                <line>140</line>
+                <key/>
+            </bookmark>
+            <bookmark id="13">
+                <name/>
+                <line>235</line>
+                <key/>
+            </bookmark>
+            <bookmark id="33">
+                <name/>
+                <line>262</line>
+                <key/>
+            </bookmark>
+            <bookmark id="30">
+                <name/>
+                <line>323</line>
+                <key/>
+            </bookmark>
+            <bookmark id="34">
+                <name/>
+                <line>349</line>
+                <key/>
+            </bookmark>
+        </file>
+        <file>
+            <url>src/Helpers/BookingHelper.php</url>
+            <bookmark id="5">
+                <name/>
+                <line>502</line>
+                <key/>
+            </bookmark>
+            <bookmark id="35">
+                <name/>
+                <line>539</line>
+                <key/>
+            </bookmark>
+            <bookmark id="8">
+                <name/>
+                <line>637</line>
+                <key/>
+            </bookmark>
+            <bookmark id="15">
+                <name/>
+                <line>714</line>
+                <key/>
+            </bookmark>
+            <bookmark id="19">
+                <name/>
+                <line>721</line>
+                <key/>
+            </bookmark>
+            <bookmark id="4">
+                <name/>
+                <line>788</line>
+                <key/>
+            </bookmark>
+            <bookmark id="16">
+                <name/>
+                <line>812</line>
+                <key/>
+            </bookmark>
+            <bookmark id="12">
+                <name/>
+                <line>896</line>
+                <key/>
+            </bookmark>
+        </file>
+        <file>
+            <url>src/Helpers/UserHelper.php</url>
+            <bookmark id="9">
+                <name/>
+                <line>237</line>
+                <key/>
+            </bookmark>
+            <bookmark id="10">
+                <name/>
+                <line>311</line>
+                <key/>
+            </bookmark>
+            <bookmark id="11">
+                <name/>
+                <line>438</line>
+                <key/>
+            </bookmark>
+        </file>
+        <file>
+            <url>src/Controller/EventController.php</url>
+            <bookmark id="17">
+                <name/>
+                <line>224</line>
+                <key/>
+            </bookmark>
+            <bookmark id="20">
+                <name/>
+                <line>251</line>
+                <key/>
+            </bookmark>
+            <bookmark id="18">
+                <name/>
+                <line>299</line>
+                <key/>
+            </bookmark>
+        </file>
+    </editor-bookmarks>
+    <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
+        <group>
+            <file>file:/git/ra_events/com_ra_events/site/forms/eventform.xml</file>
+        </group>
+    </open-files>
+</project-private>

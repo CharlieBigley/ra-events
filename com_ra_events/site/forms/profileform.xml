@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form addfieldprefix="Ramblers\Component\Ra_events\Administrator\Field">
+  <fieldset 
+    addfieldprefix="Ramblers\Component\Ra_tools\Administrator\Field"
+    addruleprefix="Ramblers\Component\Ra_tools\Administrator\Rule"
+  > 
+    <field name="checked_out" type="hidden" filter="unset"/>
+    <field name="checked_out_time" type="hidden" filter="unset"/>
+    <field name="created" class="inputbox" format="%Y-%m-%d" timeformat="12" filter="user_utc" translateformat="false" showtime="false" singleheader="false" todaybutton="false" weeknumbers="false" filltable="false" type="calendar" readonly="true" label="COM_RA_EVENTS_FORM_LBL_PROFILE_CREATED" description="COM_RA_EVENTS_FORM_DESC_PROFILE_CREATED" hidden="true" hint="COM_RA_EVENTS_FORM_LBL_PROFILE_CREATED"/>
+    <field name="modified" class="inputbox" format="%Y-%m-%d" timeformat="12" filter="user_utc" translateformat="false" showtime="false" singleheader="false" todaybutton="false" weeknumbers="false" filltable="false" type="calendar" readonly="true" label="COM_RA_EVENTS_FORM_LBL_PROFILE_MODIFIED" description="COM_RA_EVENTS_FORM_DESC_PROFILE_MODIFIED" hidden="true" hint="COM_RA_EVENTS_FORM_LBL_PROFILE_MODIFIED"/>
+    <field name="state" default="1" type="list" label="JSTATUS" description="JFIELD_PUBLISHED_DESC" class="inputbox" size="1">
+      <option value="1">Confirmed</option>
+      <option value="0">Provisional</option>
+      <option value="-2">Canceller</option>
+    </field>
+    <field name="id" type="text" readonly="true" class="readonly" default="0" description="JGLOBAL_FIELD_ID_DESC"/>
+    
+    <field name="home_group" 
+        filter="safehtml" 
+        type="text" 
+        validate="groupcode" 
+        maxlength="4"
+        required="true" 
+        label="Code for Home Group" 
+        description="Group with which registered at Central Office" 
+        hint="aa01"
+    />
+    <field name="real_name" 
+        maxlength="60" 
+        filter="string" 
+        type="text" 
+        required="true" 
+        label="Real name" 
+        description="Your actual name (will not be shown publicly)" 
+        hint="Name"
+    />
+    <field name="preferred_name" 
+        maxlength="60" 
+        filter="string" 
+        type="text" 
+        required="true" 
+        label="Preferred name" 
+        description="Name by which you prefer to be known" 
+        hint="Nickname"
+    />
+    <field name="email" 
+        validate="email" 
+        type="email" 
+        label="Email" 
+        description="Email address" 
+        hint="aaaa@bbb.com"
+    />
+    <field name="message" 
+        maxlength="60" 
+        filter="string" 
+        type="text" 
+        readonly="true" 
+        label="message" 
+    />
+    <field name="mode"
+        type="text"
+        readonly="true"
+    /> 
+    <field name="version_note" type="text" label="JGLOBAL_FIELD_VERSION_NOTE_LABEL" description="JGLOBAL_FIELD_VERSION_NOTE_DESC" class="inputbox" size="45" labelclass="control-label"/>
+  </fieldset>
+</form>

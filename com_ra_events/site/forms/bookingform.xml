@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form addfieldprefix="Ramblers\Component\Ra_events\Site\Field">
+  <fieldset name="mainFieldset">
+  <!-- fields name="details" -->
+    <field name="checked_out" type="hidden" filter="unset"/>
+    <field name="checked_out_time" type="hidden" filter="unset"/>
+    <field name="id" type="hidden" readonly="true" class="readonly" default="0" description="JGLOBAL_FIELD_ID_DESC"/>
+    <field name="state" default="0" type="list" label="JSTATUS" 
+           description="JFIELD_PUBLISHED_DESC" class="inputbox" size="1">
+      <option value="1">Confirmed</option>
+      <option value="0">Provisional</option>
+      <option value="-2">Cancelled</option>
+    </field>
+    <field name="page_intro" 
+            type="editor" 
+            buttons="true" 
+            class="inputbox" 
+            filter="safehtml" 
+            label="Introduction (optional)" 
+            description="Any introductory text for the page" /> 
+    <field name="num_places" 
+           default="1" 
+           type="radio" 
+           required="true" 
+           label="Number" 
+           >
+      <option value="1">Single person</option>
+      <option value="2">Two persons</option>
+    </field>
+    <field name="partner" 
+           maxlength="50" 
+           filter="safehtml" 
+           type="text" 
+           label="Other" 
+           description="The name of the second person" 
+           showon="num_places:2"/>
+    <field name="special_request"  type="text" 
+           label="Special request (optional)" 
+           description="E.g. dietary requirement or access (cannot be guaranteed)"/>    
+    <field name="custom1"  type="text" 
+           label="custom1" />    
+    <field name="custom2"  type="text" 
+           label="custom2" />    
+    <field name="user_id" filter="int" type="text" 
+           label="User id" 
+           description="" />
+    <field name="event_id" 
+           filter="int" 
+           type="hidden" 
+           label="Event id" description="" />
+    <field name="terms" 
+           type="radio" 
+           required="true" 
+           label="Terms and Conditions" 
+           >
+      <option value="1">I agree to my data being held in this website for the purpose of managing my booking, and in accordance with the Terms and Conditions.</option>
+    </field>
+    <field name="version_note" type="text" label="JGLOBAL_FIELD_VERSION_NOTE_LABEL" description="JGLOBAL_FIELD_VERSION_NOTE_DESC" class="inputbox" size="45" labelclass="control-label"/>
+  <!--  /fields  -->
+  </fieldset>
+</form>

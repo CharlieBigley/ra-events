@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<metadata>
+    <layout title="Register or Create new user" option="View">
+        <message>
+                        <![CDATA[Register or Create new user]]>
+        </message>
+    </layout>
+    <fields name="params">
+        <fieldset 
+            name="basic"
+            label="Options">
+            <field name="note01" 
+                   type="note" 
+                   label="This menu item is usually not required if RA Mailman is installed, since if a user is registered in MailMan, they will already have a profile record." /> 
+            <field name="mode" 
+                    default="1" 
+                    type="list" 
+                    label="Mode" 
+                    description="Type of menu required" 
+                    
+                    class="inputbox" 
+                    size="1">
+            <option value="0">Self register</option>
+            <option value="1">Admin registration</option>
+            </field>
+            <field name="page_intro" 
+                type="editor" 
+                buttons="true" 
+                class="inputbox" 
+                filter="safehtml" 
+                label="Introduction (optional)" 
+                description="Any introductory text for the page" />             
+            <field name="page_footer" 
+               type="text" 
+               default=""
+               class="input-xxlarge" 
+               label="Page footer (optional)" 
+               description="Any required text for the foot of the page" 
+            />   
+            <field name="note2" 
+                   type="note" 
+                   showon="mode:0"
+                   label="This menu item should only be visible to Guest users"
+            />
+            <field name="note3" 
+                   type="note" 
+                   showon="mode:1"
+                   label="This menu item should only be visible to Registered users"
+            />             
+    
+        </fieldset>
+    </fields>
+</metadata>

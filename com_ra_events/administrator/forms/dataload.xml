@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+	<fieldset addfieldpath="/components/com_ra_mailman/models/fields">
+            <field
+                name="csv_file"
+                type="file"
+                label="File upload"
+                description="Name of the data file on your computer"
+                size="40"
+                class="inputbox"
+                default=""
+            />       
+            <field
+                name="data_type"
+                type="radio"
+                label="Type of data"
+                description="Type of data to load"
+                class="inputbox"
+                size="1"
+                required="true"
+                default="5"
+                >
+                <option value="5">Simple CSV file (group,name,email)</option>
+            </field> 
+            <field
+                name="file"
+                type="hidden"
+                label="File upload"
+                description="Currently selected file"
+                readonly="true"
+            />
+            <field
+                name="event"
+                type="sql"
+                label="Event"
+                query="SELECT id AS value, CONCAT(group_code,' ',title) as `event` FROM `#__ra_events` WHERE bookable AND DATEDIFF(event_date, CURRENT_DATE)>=0"
+                required="true"
+            />
+            <field
+                name="processing"
+                type="hidden"
+                description="Validation only, or commit changes to the database"
+                default="0"
+               />
+</fieldset>
+</form>
+
