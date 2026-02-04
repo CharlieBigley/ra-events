@@ -1,26 +1,14 @@
 # IDE and Editor files
 .vscode/
 .idea/
+*.iml
+*.sublime*
+*.code-workspace
+
+# Editor backup files
 *.swp
 *.swo
 *~
-.DS_Store
-Thumbs.db
-nbproject/
-
-# Composer
-vendor/
-composer.lock
-
-# Node
-node_modules/
-npm-debug.log
-yarn-error.log
-
-# Environment files
-.env
-.env.local
-.env.*.local
 
 # OS files
 .DS_Store
@@ -30,19 +18,54 @@ yarn-error.log
 .Trashes
 ehthumbs.db
 desktop.ini
+Icon?
+Thumbs.db
 
 # Joomla specific
+nbproject/
 configuration.php
-cache/
-tmp/
-logs/
+/cache/
+/tmp/
+/logs/
 
-# Temporary files
+# Composer
+vendor/
+composer.lock
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+
+# Environment files
+.env
+.env.local
+.env.*
+.env.*.local
+
+# Temporary and backup files
 *.tmp
 *.bak
 *.backup
+*.old
 *.log
+
+# Archive files
+*.zip
+*.tar.gz
+*.tar.bz2
+*.tar
+*.gz
+*.7z
+*.rar
+
+# Lock files
+*.lock
 
 # Build artifacts
 dist/
 build/
+.cache/
+coverage/

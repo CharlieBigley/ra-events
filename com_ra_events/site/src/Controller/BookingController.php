@@ -326,6 +326,8 @@ class BookingController extends FormController {
 //        if ($current->user->id !== $this->item->contact_id) {
 //            throw new \Exception('This function only available to the event organiser', 403);
 //        }
+		$target_email = 'index.php?option=com_ra_tools&task=system.eventAttendees&id=';
+
         $table = new ToolsTable;
         $header = 'Status, Name, Places, Other ';
         if ($item->booking1 !== '') {
@@ -366,7 +368,10 @@ class BookingController extends FormController {
                 $message = 'Please check Backend>RA Dashboard>MailMan Reports>Contacts Report for user ' . $row->user_id;
                 $this->app->enqueueMessage($message, 'warning');
             } else {
-                $table->add_item($row->preferred_name);
+            	$target = $target_email . $event_id . '&booking_id=' . $row->id;
+            	$class = '<span class="icon-envelope" aria-hidden="true"></span>';
+                $link = $this->toolsHelper->buildLink($target , $class, false);
+                $table->add_item($row->preferred_name . $link);
             }
             $table->add_item($row->num_places);
             $table->add_item($row->partner);
@@ -466,8 +471,8 @@ class BookingController extends FormController {
         echo 'Test<br>';
 
         $helper = new BookingHelper;
-//        $helper->notifyOrganiser(56);
-//        return;
+        $helper->notifyOrganiser(2);
+        return;
 // event 64 = website training
         $token = $helper->encode(64, 935, 1);  // event_id, user_id, mode
         $target = 'index.php?option=com_ra_events&task=booking.processEmail&token=' . $token;

@@ -1,30 +1,42 @@
 <?php
 
 /**
- * @version    2.2.2
+ * @version    2.2.5
  * @component  com_ra_events
  * @author     Charlie Bigley <webmaster@bigley.me.uk>
  * @copyright  2023 Charlie Bigley
  * @license    GNU General Public License version 2 or later; see LICENSE.txt
-
- * 07/06/25 MK Copied from release 2.0.2 and modified for use as WebAPI model, simplified to return all published events
- * 01/09/25 CB Use bespoke Api model, include contact details, all states, only shareable
- * 10/09/25 CB remove user email from query
- * 16/09/25 CB correct select criteria
+ * 16/10/23 CB derive organiser from contact_details
+ * 26/10/23 CB support for Bookings
+ * 30/10/23 CB add days_to_go
+ * 25/11/23 CB always sort by event_date, DESC for committee meetings, else ASC
+ * 02/12/24 CB change description to title
+ * 09/12/24 CB show past events for Inspections
+ * 10/12/24 CB correct sort
+ * 05/03/25 CB select bookable
+ * 30/03/25 CB don't show Events until their publication date
+ * 14/04/25 CB correction for location
+ * 16/06/25 CB get a.*
+ * 01/10/25 CB allow sorting
  */
 
-namespace Ramblers\Component\Ra_events\Administrator\Model;
+namespace Ramblers\Component\Ra_events\Site\Model;
 
 // No direct access.
 defined('_JEXEC') or die;
 
+use \Joomla\CMS\Factory;
+use \Joomla\CMS\Language\Text;
 use \Joomla\CMS\MVC\Model\ListModel;
 use \Joomla\Component\Fields\Administrator\Helper\FieldsHelper;
-use \Joomla\CMS\Factory;
-use Ramblers\Component\Ra_tools\Site\Helpers\ToolsHelper;
+use \Joomla\CMS\Helper\TagsHelper;
+use \Joomla\CMS\Layout\FileLayout;
+use \Joomla\Database\ParameterType;
+use \Joomla\Utilities\ArrayHelper;
+use \Ramblers\Component\Ra_tools\Site\Helpers\ToolsHelper;
 
 /**
- * Methods supporting a list of Events records.
+ * Methods supporting a list of Ra_events records.
  *
  * @since  1.0.1
  */
@@ -35,28 +47,30 @@ class EventsModel extends ListModel {
      *
      * @param   array  $config  An optional associative array of configuration settings.
      *
-     * @see        JController
-     * @since      1.6
+     * @see    JController
+     * @since  1.0.1
      */
     public function __construct($config = array()) {
         if (empty($config['filter_fields'])) {
             $config['filter_fields'] = array(
-                'a.id',
-                'a.state',
+                'id', 'a.id',
                 'c.name',
-                'a.event_date',
-                'a.event_time',
-                'event_type.description',
                 'a.title',
-                'a.group_code',
-                'a.location',
-                'a.url',
-                'a.attachments',
-                'a.url_description',
-                'a.attachment_description',
+                'url', 'a.url',
+                'attachments', 'a.attachments',
+                'event_date', 'a.event_date',
+                'event_type_id', 'a.event_type_id',
+                'title', 'a.title',
+                'group_code', 'a.group_code',
+                'location', 'a.location',
+                'details', 'a.details',
+                'a.bookable',
+                'url_description', 'a.url_description',
+                'event_type.description',
+                'event_time', 'a.event_time',
             );
-            $this->search_fields = $config['filter_fields'];
         }
+
         parent::__construct($config);
     }
 
@@ -68,13 +82,49 @@ class EventsModel extends ListModel {
      * @param   string  $ordering   Elements order
      * @param   string  $direction  Order direction
      *
-     * @return void
+     * @return  void
      *
-     * @throws Exception
+     * @throws  Exception
+     *
+     * @since   1.0.1
      */
     protected function populateState($ordering = null, $direction = null) {
+        // Find the type of event
+        $app = Factory::getApplication();
+        $event_type_id = $app->input->getInt('event_type_id', '0');
+        if (($event_type_id > 1) AND ($event_type_id < 5)) {
+            $number_to_show = 5;
+            $default_sort_direction = 'ASC';
+        } else {
+            $default_sort_direction = 'DESC';
+            $number_to_show = 25; // Committee Meetings / WM 
+        }
+
         // List state information.
-        parent::populateState('event_date', 'DESC');
+        parent::populateState('a.event_date', $default_sort_direction);
+
+        $list = $app->getUserState($this->context . '.list');
+
+//        $value = $app->getUserState($this->context . '.list.limit', $app->get('list_limit', $number_to_show));
+//        $list['limit'] = $value;
+
+        $list['limit'] = $number_to_show;
+
+        $this->setState('list.limit', $number_to_show);
+
+        $value = $app->input->get('limitstart', 0, 'uint');
+        $this->setState('list.start', $value);
+
+    //    $ordering = $this->getUserStateFromRequest($this->context . '.filter_order', 'filter_order', 'a.event_date');
+    //    $direction = strtoupper($this->getUserStateFromRequest($this->context . '.filter_order_Dir', 'filter_order_Dir', $default_sort_direction));
+
+        if (!empty($ordering) || !empty($direction)) {
+            $list['fullordering'] = $ordering . ' ' . $direction;
+            Factory::getApplication()->enqueueMessage('type ' . $event_type_id . ' Sort ' . $ordering . ' ' . $direction);
+        }
+
+        $app->setUserState($this->context . '.list', $list);
+
 
         $context = $this->getUserStateFromRequest($this->context . '.filter.search', 'filter_search');
         $this->setState('filter.search', $context);
@@ -90,42 +140,6 @@ class EventsModel extends ListModel {
         }
     }
 
-// populateState()
-
-    /**
-     * Method to get a store id based on model configuration state.
-     *
-     * This is necessary because the model is used by the component and
-     * different modules that might need different sets of data or different
-     * ordering requirements.
-     *
-     * @param   string  $id  A prefix for the store id.
-     *
-     * @return  string A store id.
-     *
-     * @since   1.0.1
-     */
-    protected function getStoreId($id = '') {
-        // Compile the store id.
-        $id .= ':' . $this->getState('filter.search');
-        $id .= ':' . $this->getState('filter.state');
-
-        return parent::getStoreId($id);
-    }
-
-// getStoreId(
-
-    /**
-     * Method to get the model refernce.
-     *
-     * @since   1.0.1
-     */
-    protected function getModel() {
-        return parent::getModel('Events', 'Api', array('ignore_request' => true));
-    }
-
-// getModel()
-
     /**
      * Build an SQL query to load the list data.
      *
@@ -134,56 +148,155 @@ class EventsModel extends ListModel {
      * @since   1.0.1
      */
     protected function getListQuery() {
-        // Create a new query object.
-        $db = $this->getDbo();
-        $query = $db->getQuery(true);
-        /*
-          $sql .= 'WHERE e.shareable=1 ';
-          $sql .= 'AND e.api_site_id IS NULL ';
-          $sql .= 'AND DATEDIFF(e.event_date, CURRENT_DATE) > 0 ';
-          $sql .= 'AND DATEDIFF(e.share_date,CURRENT_DATE) < 0 ';
-         */
-        // Select the required fields from the table.
-        // N.B. not possible to look up email, because access to users table not allowed
-        $query->select('a.*');
-        $query->select('p.preferred_name AS contact_name');
-        $query->from('`#__ra_events` AS a');
-        $query->leftJoin('#__contact_details AS c ON c.id = a.contact_id');
-        $query->leftJoin('#__ra_profiles AS p ON p.id = c.user_id');
-        $query->where('(a.shareable =1)');
-        $query->where('(a.api_site_id IS NULL)');
-        $query->where('DATEDIFF(a.event_date, CURRENT_DATE) > 0');
-        $query->where('DATEDIFF(a.share_date,CURRENT_DATE) < 0 ');
-        $query->order('a.id DESC');
+        // Find the type of event
+        $this->event_type_id = Factory::getApplication()->input->getInt('event_type_id', '0');
 
+        $query = $this->_db->getQuery(true);
+
+        $query->select('a.*');
+        $query->select("event_type.description as event_type");
+        $query->select('c.name');
+        $query->select('DATEDIFF(a.event_date, CURRENT_DATE) AS days_to_go');
+
+        $query->select("a.details as full_details");
+        $query->select("CASE when (a.details IS NULL) THEN" .
+                " '-' ELSE " .
+                "'Y' END as details");
+        $query->select("CASE when (a.reports IS NULL) THEN" .
+                " '-' ELSE " .
+                "'Y' END as reports");
+        $query->select("CASE when (a.minutes IS NULL) = 0 THEN" .
+                " '-' ELSE " .
+                "'Y' END as minutes");
+        // following line added 11/12/23 - should not be needed
+        $query->select('LENGTH(a.minutes) AS len_minutes');
+        $query->from('`#__ra_events` AS a');
+        $query->select('c.name', 'contact');
+        $query->leftJoin('#__ra_event_types AS event_type ON event_type.id = a.event_type_id');
+        $query->leftJoin('#__contact_details AS c ON c.id = a.contact_id');
+        $query->where('a.state = 1');
+        // The Event Type will have been set up in the __construct function, depending on the menu parameter
+        if ($this->event_type_id != 0) {
+            $query->where('a.event_type_id=' . $this->event_type_id);
+        }
+        // Don't show events until their publication date
+        $query->where('DATEDIFF(a.publication_date, CURRENT_DATE)<=0');
+        // Except for Committee meetings & Inspections, only show future events
+        if ($this->event_type_id !== 1) {
+            $query->where('DATEDIFF(a.event_date, CURRENT_DATE)>=0');
+            if (JDEBUG) {
+                Factory::getApplication()->enqueueMessage('DATEDIFF(a.event_date, CURRENT_DATE)>=0');
+            }
+        }
+        // Search for this word
+        $searchWord = $this->getState('filter.search');
+
+        // Search in these columns
+        $searchColumns = array(
+            'event_type.description',
+            'a.title',
+            'c.name',
+            'a.location',
+            'a.details',
+            'a.group_code',
+        );
+
+        if (!empty($searchWord)) {
+            if (stripos($searchWord, ' id:') === 0) {
+                // Build the ID search
+                $idPart = (int) substr($searchWord, 3);
+                $query->where($this->_db->qn('a .id') . ' = ' . $this->_db->q($idPart));
+            } else {
+                $query = ToolsHelper::buildSearchQuery($searchWord, $searchColumns, $query);
+            }
+        }
+
+        $orderCol = $this->state->get('list.ordering', 'a.event_date');
+        $orderDirn = $this->state->get('list.direction', 'asc');
+
+        if ($orderCol && $orderDirn) {
+            $query->order($this->_db->escape($orderCol . ' ' . $orderDirn));
+        }
+        if (JDEBUG) {
+            Factory::getApplication()->enqueueMessage($this->_db->replacePrefix($query));
+        }
         return $query;
     }
 
-// getListQuery()
-
     /**
-     * Get an array of data items
+     * Method to get an array of data items
      *
-     * @return mixed Array of data items on success, false on failure.
+     * @return  mixed An array of data on success, false on failure.
      */
     public function getItems() {
         $items = parent::getItems();
 
+        foreach ($items as $item) {
+
+            if (isset($item->event_type_id)) {
+
+                $values = explode(', ', $item->event_type_id);
+                $textValue = array();
+
+                foreach ($values as $value) {
+                    $db = $this->getDbo();
+                    $query = $db->getQuery(true);
+                    $query
+                            ->select('`description`')
+                            ->from($db->quoteName('#__ra_event_types'))
+                            ->where($db->quoteName('id') . ' = ' . $db->quote($db->escape($value)));
+
+                    $db->setQuery($query);
+                    $results = $db->loadObject();
+
+                    if ($results) {
+                        $textValue[] = $results->description;
+                    }
+                }
+
+                $item->event_type_id = !empty($textValue) ? implode(', ', $textValue) : $item->event_type_id;
+            }
+        }
+
         return $items;
     }
 
-//getItems()
-
     /**
-     * Get an array of data items
+     * Overrides the default function to check Date fields format, identified by
+     * "_dateformat" suffix, and erases the field if it's not correct.
      *
-     * @return mixed Array of data items on success, false on failure.
+     * @return void
      */
-    public function validate($form, $data, $group = true) {
+    protected function loadFormData() {
         $app = Factory::getApplication();
+        $filters = $app->getUserState($this->context . '.filter', array());
+        $error_dateformat = false;
 
-        return $data;
+        foreach ($filters as $key => $value) {
+            if (strpos($key, '_dateformat') && !empty($value) && $this->isValidDate($value) == null) {
+                $filters[$key] = '';
+                $error_dateformat = true;
+            }
+        }
+
+        if ($error_dateformat) {
+            $app->enqueueMessage(Text::_("Invalid date format"), "warning");
+            $app->setUserState($this->context . '.filter', $filters);
+        }
+
+        return parent::loadFormData();
     }
 
-// validate()
+    /**
+     * Checks if a given date is valid and in a specified format (YYYY-MM-DD)
+     *
+     * @param   string  $date  Date to be checked
+     *
+     * @return bool
+     */
+    private function isValidDate($date) {
+        $date = str_replace('/', '-', $date);
+        return (date_create($date)) ? Factory::getDate($date)->format("Y-m-d") : null;
+    }
+
 }

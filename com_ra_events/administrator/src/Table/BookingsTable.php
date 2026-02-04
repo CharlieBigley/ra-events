@@ -12,6 +12,7 @@
  * 28/09/25 CB update events / num_bookings
  * 03/10/25 CB of creating a booking from email, log created_by as user from booking
  * 14/11/25 CB set special_request & confirmed as Null
+ * 26/11/25 CB reset partner name if only one place
  */
 
 namespace Ramblers\Component\Ra_events\Administrator\Table;
@@ -86,10 +87,13 @@ class BookingsTable extends Table implements VersionableTableInterface, Taggable
 //        $date = Factory::getDate();
         $task = Factory::getApplication()->input->get('task');
         $user = Factory::getApplication()->getIdentity();
-
-        if ($this->partner !== '') {
-            $this->num_places = 2;
+        if ($array['num_places'] == 1) {
+            $this->partner = '';
+            $array['partner'] = '';
         }
+//        if ($this->partner !== '') {
+//            $this->num_places = 2;
+//        }
         // Support for fields that must be null
         if ($array['special_requests'] == '') {
             $array['special_requests'] = NULL;
