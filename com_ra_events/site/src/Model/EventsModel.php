@@ -1,7 +1,7 @@
 <?php
 
 /**
- * @version    2.4.4
+ * @version    2.4.6
  * @component  com_ra_events
  * @author     Charlie Bigley <webmaster@bigley.me.uk>
  * @copyright  2023 Charlie Bigley
@@ -20,6 +20,7 @@
  * 01/10/25 CB allow sorting
  * 19/01/26 CB debug sorting (grid.sort)
  * 20/01/26 CB remove diagnostic display
+ * 04/02/26 CB return actual fields for details/reports/minutes
  */
 
 namespace Ramblers\Component\Ra_events\Site\Model;
@@ -158,20 +159,7 @@ class EventsModel extends ListModel {
         $query->select("event_type.description as event_type");
         $query->select('c.name');
         $query->select('DATEDIFF(a.event_date, CURRENT_DATE) AS days_to_go');
-
         $query->select("a.details as full_details");
-        $query->select("CASE when (a.details IS NULL) THEN" .
-                " '-' ELSE " .
-                "'Y' END as details");
-        $query->select("CASE when (a.reports IS NULL) THEN" .
-                " '-' ELSE " .
-                "'Y' END as reports");
-        $query->select("CASE when (a.minutes IS NULL) = 0 THEN" .
-                " '-' ELSE " .
-                "'Y' END as minutes");
-        // following line added 11/12/23 - should not be needed
-        // comment out again 19/01/26
-//        $query->select('LENGTH(a.minutes) AS len_minutes');
         $query->from('`#__ra_events` AS a');
         $query->select('c.name', 'contact');
         $query->leftJoin('#__ra_event_types AS event_type ON event_type.id = a.event_type_id');

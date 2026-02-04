@@ -1,7 +1,7 @@
 <?php
 
 /**
- * @version    2.3.6
+ * @version    2.4.6
  * @package    com_ra_events
  * @author     Charlie Bigley <webmaster@bigley.me.uk>
  * @copyright  2023 Charlie Bigley
@@ -10,6 +10,7 @@
  * 17/03/25 CB create confirmed booking
  * 07/07/25 CB stub for multiBook
  * 04/11/26 CB set id=0 for view bookingform
+ * 04/02/26 CB Multibook: use sub-query to check for existing booking, and allow provisional booking to be confirmed
  */
 
 namespace Ramblers\Component\Ra_events\Site\Controller;
@@ -180,42 +181,47 @@ class ProfilesController extends FormController {
     }
 
     public function multiBook() {
-        // Primary keys do not get set up - array is always empty
-        /*
+          // Retrieve the event id from the globals
+        $event_id = $this->app->getUserState('com_ra_events.profiles.event_id', 0);
+
+//        echo 'Event id= ' . $event_id . '<br>';      
           $primary_keys = $this->input->post->get('cid', array(), 'array');
-          var_dump($primary_keys);
+//          var_dump($primary_keys);
           foreach ($primary_keys as $id) {
-          //            $this->changeState($primary_key, '1');
-          $this->app->enqueueMessage('id=' . $id, 'info');
+                      $this->multiBookEntry($event_id,$id);     
           }
-          die;
-         */
-        $this->app->enqueueMessage('Sorry, not yet implemented', 'info');
 
-        $target = 'index.php?option=com_ra_events&view=profiles&event_id=';
-        $target .= $event_id . '&Itemid=' . $menu_id;
-        $this->setRedirect(Route::_($target, false));
-        $this->redirect();
-        return;
-
-        try {
-            if ($id == 0) {
-                throw new \Exception(Text::_('No subscription selected'));
-            }
-        } catch (\Exception $e) {
-            Factory::getApplication()->enqueueMessage($e->getMessage(), 'warning');
-        }
-
-
-        $id = $this->app->input->getInt('id', '0');
-        $user_id = $this->app->input->getInt('user_id', '0');
-        $event_id = $this->app->input->getInt('event_id', '0');
-        $menu_id = $this->app->input->getInt('Itemid', '0');
-        $this->app->enqueueMessage('Sorry, not yet implemented', 'info');
         $target = 'index.php?option=com_ra_events&view=profiles&event_id=';
         $target .= $event_id . '&Itemid=' . $menu_id;
         $this->setRedirect(Route::_($target, false));
         $this->redirect();
     }
 
+    private function multiBookEntry($event_id,$id) {
+//        $this->app->enqueueMessage('id=' . $id, 'info');
+        $sql = 'SELECT b.id, b.state, p.preferred_name FROM #__ra_profiles AS p ';
+        $sql .= 'LEFT JOIN  #__ra_bookings AS b ON b.user_id = p.id ';
+        $sql .= 'WHERE b.user_id=' . $id;
+        $sql .= ' AND b.event_id=' . $event_id;
+        $item = $this->toolsHelper->getItem($sql);
+        if (is_null($item)) {
+            $new = $this->bookingHelper->lookupUsername($id);
+            $booking_id = $this->bookingHelper->createBooking($event_id, $id);
+            $this->bookingHelper->confirmBooking($booking_id);
+            $message = $new . ' has been booked';
+            $this->app->enqueueMessage($message, 'info');
+        } elseif ($item->state == 0) {
+//               $bookingHelper->confirmBooking($item->id);
+            $message = $item->preferred_name . ' already has a provisional booking';
+            $this->app->enqueueMessage($message, 'info');
+        } elseif ($item->state == 1) {
+            $message = $item->preferred_name . ' already has confirmed booking';
+            $this->app->enqueueMessage($message, 'error');
+        } elseif ($item->state == -2) {
+//                $bookingHelper->confirmBooking($item->id);
+            $message = $item->preferred_name . ' has been cancelled';
+            $this->app->enqueueMessage($message, 'info');
+        }
+        echo $message . '<br>';
+    }    
 }

@@ -1,6 +1,6 @@
 <?php
 /**
- * @version    2.4.3
+ * @version    2.4.6
  * @component  com_ra_events
  * @author     Charlie Bigley <webmaster@bigley.me.uk>
  * @copyright  2023 Charlie Bigley
@@ -12,6 +12,7 @@
  * 04/12/24 CB revert to using image, not icon
  * 21/03/25 CB remove $can*
  * 30/06/25 CB pass layout as parameter to Event
+ * 04/02/25 CB show 'Y' if agenda/reports/minutes exist, else show -
  */
 // No direct access
 defined('_JEXEC') or die;
@@ -183,31 +184,28 @@ $target .= '&layout=' . $this->layout . '&id=';
                     if ($this->event_type_id == 1) {
 
                         echo '<td class="item-details">';
-                        echo $item->details;
-                        if ($item->details == "Y") {
-//                            echo $objHelper->buildlink($target . $item->id . '&mode=A', '<i class="icon-info"></i>');
+                        if ((is_null($item->details)) OR (strlen($item->details) == 0) ) {
+                            echo '-';
+                        } else {
+                            echo 'Y';
                             echo $objHelper->imageButton("I", $target . $item->id . '&mode=A');
                         }
                         echo '</td>';
+
                         echo '<td class="item-reports">';
-                        echo $item->reports;
-                        if ($item->reports == "Y") {
-//                            echo $objHelper->buildlink($target . $item->id . '&mode=R', '<i class="icon-info"></i>');
+                        if ((is_null($item->reports)) OR (strlen($item->reports) == 0) ) {
+                            echo '-';
+                        } else {
+                            echo 'Y';
                             echo $objHelper->imageButton("I", $target . $item->id . '&mode=R');
                         }
                         echo '</td>';
 
                         echo '<td class="item-minutes">';
-                        // 11/12/23 following change should not be necessary
-//                        echo $item->minutes;
-//                        if ($item->minutes == "Y") {
-//                            echo $objHelper->imageButton("I", $target . $item->id . "&mode=M");
-//                        }
-                        echo $item->reports;
-                        if ($item->len_minutes == 0) {
-
+                        if ((is_null($item->minutes)) OR (strlen($item->minutes) == 0) ) {
+                            echo '-';
                         } else {
-                            //                           echo $objHelper->buildlink($target . $item->id . '&mode=M', '<i class="icon-info"></i>');
+                            echo 'Y';
                             echo $objHelper->imageButton("I", $target . $item->id . '&mode=M');
                         }
                         echo '</td>';

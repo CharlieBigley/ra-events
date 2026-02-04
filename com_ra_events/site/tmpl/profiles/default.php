@@ -1,6 +1,6 @@
 <?php
 /**
- * @version    2.1.6
+ * @version    2.4.6
  * @package    com_ra_events
  * @author     Charlie Bigley <charlie@bigley.me.uk>
  * @copyright  2025 Charlie Bigley
@@ -8,6 +8,7 @@
  * 07/05/25 CB show partner
  * 07/07/25 CB use sub-query, multiBook
  * 21/07/25 CB use $this->user
+ * 04/02/26 CB change multibook butoon to form_submit
  */
 // No direct access
 defined('_JEXEC') or die;
@@ -179,12 +180,10 @@ $wa->registerAndUseStyle('ramblers', 'com_ra_tools/ramblers.css');
 </form>
 <div class="controls">
 
-
-    <a class="validate btn btn-primary"
-       href="<?php echo Route::_('index.php?option=com_ra_events&task=profiles.multiBook'); ?>">
+    <button class="btn btn-primary" onclick="Joomla.submitform('profiles.multiBook', document.getElementById('adminForm'));">
         <span class="fas fa-check" aria-hidden="true"></span>
         <?php echo Text::_('Multi-book'); ?>
-    </a>
+    </button>
     <a class="btn btn-danger"
        href="<?php echo Route::_('index.php?option=com_ra_events&task=profiles.cancel'); ?>"
        title="<?php echo Text::_('JCANCEL'); ?>">
