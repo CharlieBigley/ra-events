@@ -1,6 +1,6 @@
 <?php
 /**
- * @version    2.4.6
+ * @version    2.4.4
  * @component  com_ra_events
  * @author     Charlie Bigley <webmaster@bigley.me.uk>
  * @copyright  2023 Charlie Bigley
@@ -13,7 +13,9 @@
  * 21/03/25 CB remove $can*
  * 30/06/25 CB pass layout as parameter to Event
  * 04/02/25 CB show 'Y' if agenda/reports/minutes exist, else show -
- */
+ * 05/02/26 CB Allow Committee Meetings to be sorted by Date
+ * 05/02/16 CB correction for remote attachments
+ */ 
 // No direct access
 defined('_JEXEC') or die;
 
@@ -76,7 +78,9 @@ $target .= '&layout=' . $this->layout . '&id=';
                         echo HTMLHelper::_('grid.sort', 'Date to', 'a.event_date_end', $listDirn, $listOrder);
                         echo '</th>';
                     } else if ($this->event_type_id == 1) {  // Committee Meeting
-                        echo '<th>Date</th>' . PHP_EOL;
+                        echo '<th class=>';
+                        echo HTMLHelper::_('grid.sort', 'Date from', 'a.event_date', $listDirn, $listOrder);
+                        echo '</th>';
                         echo '<th>Time</th>' . PHP_EOL;
                     } else {
                         echo '<th>';
@@ -234,7 +238,12 @@ $target .= '&layout=' . $this->layout . '&id=';
                         if ($label == '') {
                             $label = 'Y';
                         }
-                        echo $objHelper->buildLink(uri::Base() . $this->attachment_folder . '/' . $item->attachments, $label, true);
+                        if (is_null($this->item->api_site_id)) {
+                            $target = Juri::Base();
+                        } else {
+                            $target = $site->url . '/';
+                        }    
+                        echo $objHelper->buildLink($target . $this->attachment_folder . '/' . $item->attachments, $label, true);
                     }
                     echo '</td>';
                     if ($this->show_group == 1) {

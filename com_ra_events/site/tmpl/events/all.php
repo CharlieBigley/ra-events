@@ -1,6 +1,6 @@
 <?php
 /**
- * @version    2.4.3
+ * @version    2.4.4
  * @component  com_ra_events
  * @author     Charlie Bigley <webmaster@bigley.me.uk>
  * @copyright  2023 Charlie Bigley
@@ -12,7 +12,8 @@
  * 01/10/25 CB use HTMLHelper, not JHtml
  * 26/01/19 CB use grid.sort for all columns in all.php for reliable sorting (searchtools.sort requires Search Tools bar)
  * NOTE: A lot of time was spent tracking down the sorting issue; the actual solution was to use grid.sort instead of searchtools.sort, as the latter requires the Search Tools bar to be present and active.
- */
+ * 05/02/16 CB correction for remote attachments
+*/
 // No direct access
 defined('_JEXEC') or die;
 
@@ -182,7 +183,12 @@ $target .= '&layout=' . $this->layout . '&id=';
                         if ($label == '') {
                             $label = 'Y';
                         }
-                        echo $objHelper->buildLink(uri::Base() . $this->attachment_folder . '/' . $item->attachments, $label, true);
+                        if (is_null($this->item->api_site_id)) {
+                            $target = Juri::Base();
+                        } else {
+                            $target = $site->url . '/';
+                        }                       
+                        echo $objHelper->buildLink($target . $this->attachment_folder . '/' . $item->attachments, $label, true);
                     }
                     echo '</td>';
                     echo '<td class="item-bookable">';

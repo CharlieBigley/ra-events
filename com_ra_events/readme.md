@@ -30,9 +30,25 @@ This component has two primary purposes:
 - Customizable event types and profiles
 - Integrated reporting and filtering
 
+## Extensions
+
+For full functionality, four extensions are provided, the first of which is required by the other three.
+
+### **com_ra_events** (Component)
+Provides rich functionality for creating and updating events of several types. Can also manage bookings for nominated events. If `com_ra_mailman` is installed, any mailing list can be used to send invitations to events. Recipients can book without logging in by following an email link.
+
+### **mod_ra_events** (Module)
+A site module showing a summary of forthcoming events. Typically displayed as "Diary dates" on the front page, allowing users to easily access full event details.
+
+### **plg_ra_events** (Admin Plugin)
+Allows remote access to events designated as "Shared events" when installed and activated.
+
+### **plg_ra_events_cli** (Console Plugin)
+Exposes a standard Joomla batch command for automated processes. Enables batch jobs to run at regular intervals, interrogating a remote website via API for "shared events" and syncing them to the client website.
+
 ## Installation
 
-1. An installtion file is available on request
+1. An installation file is available on request
 2. Install via Joomla Administrator > Extensions > Extension Manager
 3. Enable the component in Extension Manager
 4. Configure component settings in Administrator

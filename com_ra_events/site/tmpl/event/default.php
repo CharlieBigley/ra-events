@@ -1,7 +1,7 @@
 <?php
 
 /**
- * @version    2.3.5
+ * @version    2.4.4
  * @component  com_ra_events
  * @author     Charlie Bigley <webmaster@bigley.me.uk>
  * @copyright  2023 Charlie Bigley
@@ -14,6 +14,7 @@
  * 30/06/25 CB use layout passed as parameter for $back, Tools for email
  * 15/09/25 CB breadcrumbs, show remote attachments
  * 03/11/25 CB pass menu_id to helper / showBookings
+ * 05/02/16 CB correction for remote attachments
  */
 // No direct access
 defined('_JEXEC') or die;
@@ -188,7 +189,7 @@ if (!$this->item->url == "") {
 }
 if ($this->item->attachments != "") {
     echo '<h4>' . $this->item->attachment_description . '</h4>';
-    if ($this->item->api_site_id == 0) {
+    if (is_null($this->item->api_site_id)) {
         $target = Juri::Base();
     } else {
         $target = $site->url . '/';
