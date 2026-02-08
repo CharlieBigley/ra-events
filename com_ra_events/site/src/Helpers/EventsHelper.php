@@ -14,6 +14,7 @@
  * 15/09/25 CB show Profiles (if MailMan not installed)
  * 18/09/25 CB ensure num_bookings is integer (for Committee meetings it will be blank)
  * 24/09/25 CB correct lookupConrtact
+ * 08/02/26 CB Don't create new events if stsus = 0 (unpublished), but update if they exist
  */
 
 namespace Ramblers\Component\Ra_events\Site\Helpers;
@@ -348,7 +349,7 @@ class EventsHelper {
         ToolBarHelper::title('Shared events for ' . $website);
         $count = count($events);
         $objTable = new ToolsTable();
-        $objTable->add_header('id,Date,Title,Group,Details,Bookable,Share_date,Contact');
+        $objTable->add_header('id,State,Date,Title,Group,Details,Bookable,Share_date,Contact');
         $target = $website . '/index.php?option=com_content&view=article&id=';
         $i = 0;
         foreach ($events as $event) {
@@ -358,15 +359,15 @@ class EventsHelper {
 //            echo $i . '<br>';
 //            var_dump($attributes);
 //            echo '<br>';
+            $objTable->add_item($attributes->state);
             $objTable->add_item($attributes->event_date);
             $objTable->add_item($attributes->title);
             $objTable->add_item($attributes->group_code);
 //         $text = $attributes[''];
-//          $link = $objHelper->buildLink($target . $id, $title, true);
-//          $objTable->add_item($link);
-//            $text = strip_tags($attributes->details);
-//            $objTable->add_item(substr($text, 0, 100) . '...');
-            $objTable->add_item(substr($attributes->details, 0, 100) . '...');
+//          $link = $objHelper->buildLink($target . $id, $title, true);        
+            $text = strip_tags($attributes->details);
+            $objTable->add_item(substr($text, 0, 100) . '...');
+//            $objTable->add_item(substr($attributes->details, 0, 100) . '...');
             $objTable->add_item($attributes->bookable);
             $objTable->add_item(HTMLHelper::_('date', $attributes->share_date, 'd/M/y'));
             $objTable->add_item($attributes->contact_name . '/' . $this->lookupContact($attributes->contact_name));
@@ -452,10 +453,13 @@ class EventsHelper {
 //            echo $sql_lookup . $this->db->quote($original_id) . '<br>';
             $row = $this->toolsHelper->getItem($sql_lookup . $this->db->quote($original_id));
             if (is_null($row)) {
-                $query->insert('#__ra_events');
-                $result = $this->db->setQuery($query)->execute();
-//                echo $query . '<br>';
-                $insert_count++;
+                // Only insert if state is not 0 (unpublished records are not created, only updated if they exist)
+                if ($attributes->state != 0) {
+                    $query->insert('#__ra_events');
+                    $result = $this->db->setQuery($query)->execute();
+//                    echo $query . '<br>';
+                    $insert_count++;
+                }
             } else {
 // Matching record has been found
                 if ($row->details <> $attributes->details) {

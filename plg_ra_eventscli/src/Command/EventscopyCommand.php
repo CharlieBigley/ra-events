@@ -99,11 +99,11 @@ class EventscopyCommand extends AbstractCommand {
      * @since   4.0.0
      */
     protected function configure(): void {
-        $this->addArgument('site', InputArgument::REQUIRED, 'id');
-        $help = "<info>%command.name%</info> Copies data fom a remote site
-            \nUsage: <info>php %command.full_name%";
+        $help = "<info>%command.name%</info> Copies data from all configured remote sites
+            \nProcesses all sites in #__ra_apisites where sub_system = 'RA Events'
+            \nUsage: <info>php %command.full_name%</info>";
 
-        $this->setDescription('Called by cron to copy Events froma remote site.');
+        $this->setDescription('Called by cron to copy Events from configured remote sites.');
         $this->setHelp($help);
     }
 
@@ -119,43 +119,68 @@ class EventscopyCommand extends AbstractCommand {
      */
     protected function doExecute(InputInterface $input, OutputInterface $output): int {
         $this->configureIO($input, $output);
-        $this->site_id = $this->cliInput->getArgument('site');
-
-        $message = 'Copying Events from site ' . $this->site_id;
-
-        $sql .= 'SELECT url, token from #__ra_api_sites ';
-        $sql .= 'WHERE id=' . $this->site_id;
-
-        //       $this->ioStyle->comment($sql);
-        $site = $this->toolsHelper->getItem($sql);
-        $message .= ', url is ' . $site->url;
+        $this->ioStyle->info('Processing start at ' . date('Y-m-d H:i:s'));
+        // Get all sites where sub_system = 'RA Events'
+        $sql = 'SELECT id, url, token from #__ra_api_sites ';
+        $sql .= 'WHERE sub_system = ' . $this->db->quote('RA Events');
+        
+        $sites = $this->toolsHelper->getRows($sql);
+        
+        if (empty($sites)) {
+            $message = 'No API sites configured for RA Events';
+            $this->ioStyle->warning($message);
+            $this->logit($message, '2');
+            return 1;
+        }
+        
+        $siteCount = count($sites);
+        $message = "Processing $siteCount configured site(s)";
         $this->ioStyle->comment($message);
-        $this->logit($message . '1');
+        $this->logit($message);
+        
+        foreach ($sites as $site) {
+            $this->site_id = $site->id;
 
-        $details = $this->eventsHelper->getSharedEvents($this->site_id);
-
-        $events = $details["data"];
-        if (is_null($events)) {
-            $message = 'No Events in feed for ' . $site->url;
+            $message = 'Copying Events from site ' . $this->site_id;
+            $message .= ', url is ' . $site->url;
             $this->ioStyle->comment($message);
-            //           $this->logit($message, '7');
+            $this->logit($message);
+
+            $details = $this->eventsHelper->getSharedEvents($this->site_id);
+            
+            // Check if getSharedEvents failed
+            if (is_null($details) || !is_array($details)) {
+                $message = 'Failed to retrieve events from ' . $site->url;
+                $this->ioStyle->error($message);
+                $this->logit($message, '1');
+                foreach ($this->eventsHelper->messages as $msg) {
+                    $this->logit($msg, '5');
+                }
+                continue;
+            }
+
+            $events = $details["data"] ?? null;
+            if (is_null($events)) {
+                $message = 'No Events in feed for ' . $site->url;
+                $this->ioStyle->comment($message);
+                foreach ($this->eventsHelper->messages as $message) {
+                    $this->logit($message, '5');
+                }
+                continue;
+            }
+            $count = count($events);
+
+            $message = "Events in feed = $count";
+            $this->ioStyle->comment($message);
+            $this->eventsHelper->storeShared($this->site_id, $events);
             foreach ($this->eventsHelper->messages as $message) {
                 $this->logit($message, '5');
             }
-            return 1;
-        }
-        $count = count($events);
-
-        $message = "Events in feed = $count";
-        $this->ioStyle->comment($message);
-        //       $this->logit($message, '7');
-        $this->eventsHelper->storeShared($this->site_id, $events);
-        foreach ($this->eventsHelper->messages as $message) {
-            $this->logit($message, '5');
         }
         $message = "Processing completed";
         $this->logit($message, '9');
-        return 1;
+        $this->ioStyle->info('Processing completed at ' . date('Y-m-d H:i:s'));
+        return 0;
     }
 
     /**
@@ -171,21 +196,7 @@ class EventscopyCommand extends AbstractCommand {
                 ->set("ref = " . $this->db->quote($this->site_id))
                 ->set("message = " . $this->db->quote($text))
         ;
-//        $this->ioStyle->comment($query);
         $result = $this->db->setQuery($query)->execute();
-    }
-
-// logit ($text , $code = 0)
-
-    private function showMessage($message, $type = '3') {
-        $this->logit($message, $type);
-        if ($type == '1') {
-            $this->ioStyle->error($message);
-        } elseif ($type == '2') {
-            $this->ioStyle->warning($message);
-        } else {
-            $this->ioStyle->comment($message);
-        }
     }
 
 }
