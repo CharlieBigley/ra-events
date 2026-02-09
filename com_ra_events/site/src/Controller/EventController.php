@@ -54,7 +54,7 @@ class EventController extends BaseController {
     public function bookingReports() {
         $event_id = $this->app->input->getInt('id', '0');
         $sort = $this->app->input->getCmd('sort', 'name');
-        $mode = $this->app->input->getWord('mode', 'table');
+        $mode = $this->app->input->getWord('mode', 'preview');
 
         $sql = 'SELECT e.event_type_id, e.event_date, e.event_date_end, e.title, ';
         $sql .= 't.description AS `event_type`, e.booking1, e.booking2 ';
@@ -64,7 +64,7 @@ class EventController extends BaseController {
         $event = $this->toolsHelper->getItem($sql);
 
         echo '<h2>Booking Reports</h2>';
-
+echo 'mode is ' . $mode . '<br>';
         $self = 'index.php?option=com_ra_events';
         // $self .= '&Itemid=' . $this->menu_id;
         $self .= '&task=event.bookingReports&id=' . $event_id;
@@ -88,36 +88,79 @@ class EventController extends BaseController {
             $sql .= ' ORDER BY g.name,p.preferred_name';
         }
         $rows = $this->toolsHelper->getRows($sql);
-        if ($mode == 'table') {
-            echo $this->toolsHelper->showPrint($target);
-            $label = 'Show as CSV';
-            $target = $self . '&sort=' . $sort . '&mode=csv';
-            echo $this->toolsHelper->buildButton($target, $label, false, 'darkgreen');
+        
+        // Build title header
+        $title = '';
+        if ($sort == 'name') {
+            $title = 'Name,Group';
         } else {
-            $label = 'Show as table';
-            $target = $self . '&sort=' . $sort . '&mode=table';
-            echo $this->toolsHelper->buildButton($target, $label, false, 'darkgreen');
+            $title = 'Group,Name';
         }
+        $title .= ', Email, Extra';
+        if ($event->booking1 !== '') {
+            $title .= ', ' . $event->booking1;
+        }
+        if ($event->booking2 !== '') {
+            $title .= ', ' . $event->booking2;
+        }
+        
+        // Generate CSV data
+        $csvData = $title . ",Special requests\n";
+        foreach ($rows as $row) {
+            if ($sort == 'name') {
+                $csvData .= $row->name . ', ';
+                $csvData .= $row->group_name . ', ';
+            } else {
+                $csvData .= $row->group_name . ', ';
+                $csvData .= $row->name . ', ';
+            }
+            $csvData .= $row->email . ', ';
+            $csvData .= $row->partner;
+            if ($event->booking1 !== '') {
+                $csvData .= ', ' . $row->custom1;
+            }
+            if ($event->booking2 !== '') {
+                $csvData .= ', ' . $row->custom2;
+            }
+            $csvData .= ', ';
+            if (str_contains($row->special_request, ',')) {
+                $csvData .= '"' . $row->special_request . '"';
+            } else {
+                $csvData .= $row->special_request;
+            }
+            $csvData .= "\n";
+        }
+        
+        // If CSV download requested, output headers and exit
+        if ($mode === 'csv') {
+            header('Content-Type: text/csv; charset=utf-8');
+            header('Content-Disposition: attachment; filename="bookings_' . date('Y-m-d') . '.csv"');
+            echo $csvData;
+            exit;
+        }
+ echo '2 mode is ' . $mode . '<br>';       
+        // Display HTML view (preview or alpha mode)
+        echo $this->toolsHelper->showPrint($target);
+        $label = 'Download as CSV';
+        $target = $self . '&sort=' . $sort . '&mode=csv';
+        echo $this->toolsHelper->buildButton($target, $label, false, 'darkgreen');
+        
         if ($mode !== 'alpha') {
             if ($sort == 'name') {
-                $title = 'Name,Group';
                 $label = 'Sort by Group';
                 $target = $self . '&mode=' . $mode . '&sort=group';
                 echo $this->toolsHelper->buildButton($target, $label, false, 'darkgreen');
             } else {
-                $title = 'Group,Name';
                 $label = 'Sort by Name';
                 $target = $self . '&mode=' . $mode . '&sort=name';
                 echo $this->toolsHelper->buildButton($target, $label, false, 'darkgreen');
             }
             if (($event->booking1 !== '') AND ($sort !== 'booking1')) {
-                $title = 'Group,Name';
                 $label = 'Sort by ' . $event->booking1;
                 $target = $self . '&mode=' . $mode . '&sort=booking1';
                 echo $this->toolsHelper->buildButton($target, $label, false, 'darkgreen');
             }
             if (($event->booking2 !== '') AND ($sort !== 'booking2')) {
-                $title = 'Group,Name';
                 $label = 'Sort by ' . $event->booking2;
                 $target = $self . '&mode=' . $mode . '&sort=booking2';
                 echo $this->toolsHelper->buildButton($target, $label, false, 'darkgreen');
@@ -126,6 +169,7 @@ class EventController extends BaseController {
             $target = $self . '&mode=alpha';
             echo $this->toolsHelper->buildButton($target, $label, false, 'darkgreen');
         }
+        
         echo '<h3>' . $event->event_type . '</h3>';
         if ($event->event_type_id == 4) {  // Holiday
             echo '<h2>' . HTMLHelper::_('date', $event->event_date, 'd-M-y') . ' to ';
@@ -135,15 +179,7 @@ class EventController extends BaseController {
         }
         echo ' <b>' . $event->title . '</b></h2>';
 
-        $title .= ', Email, Extra';
-        if ($event->booking1 !== '') {
-            $title .= ', ' . $event->booking1;
-        }
-        if ($event->booking2 !== '') {
-            $title .= ', ' . $event->booking2;
-        }
-
-        if ($mode == 'table') {
+        if ($mode == 'preview') {
             $objTable = new ToolsTable();
             $objTable->add_header($title);
             foreach ($rows as $row) {
@@ -178,39 +214,8 @@ class EventController extends BaseController {
             foreach ($names as $name) {
                 echo $name . '<br>';
             }
-        } else {
-            echo '<h4>You can copy this report and paste it into a CSV file, then add extra columns as required</h4>';
-            echo $title . ',Special requests<br>';
-            foreach ($rows as $row) {
-                if ($sort == 'name') {
-                    echo $row->name . ', ';
-                    echo $row->group_name . ', ';
-                } else {
-                    echo $row->group_name . ', ';
-                    echo $row->name . ', ';
-                }
-                echo $row->email . ', ';
-                echo $row->partner;
-                if ($event->booking1 !== '') {
-//$table->add_item($row->custom1);
-                    echo ', ' . $row->custom1;
-                }
-                if ($event->booking2 !== '') {
-//$table->add_item($row->custom2);
-                    echo ', ' . $row->custom2;
-                }
-                echo ', ';
-                if (str_contains($row->special_request, ',')) {
-                    echo '"' . $row->special_request . '"';
-                } else {
-                    echo $row->special_request;
-                }
-                echo '<br>';
-            }
-
-//            $bookingHelper = new BookingHelper;
-//            $bookingHelper->extractBookings($event_id);
         }
+        
         $back = 'index.php?option=com_ra_events&view=event&id=' . $event_id;
         echo $this->toolsHelper->backButton($back);
     }

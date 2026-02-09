@@ -69,3 +69,6 @@ dist/
 build/
 .cache/
 coverage/
+
+
+com_ra_events/site/src/Controller/EventController2.php
