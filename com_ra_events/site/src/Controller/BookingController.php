@@ -1,7 +1,7 @@
 <?php
 
 /**
- * @version    2.4.1
+ * @version    2.4.7
  * @package    com_ra_events
  * @author     Charlie Bigley <webmaster@bigley.me.uk>
  * @copyright  2023 Charlie Bigley
@@ -17,6 +17,8 @@
  * 05/11/25 CB comment out confirmBooking, does not seem to be used, prepare for booking_date
  * 11/11/25 CB special requests
  * 13/11/25 CB ignore blank special requests
+ * 22/02/26 CB ensure user is logged in showBookings, disallow selection of users for past events
+ *             resend confirmation email
  */
 
 namespace Ramblers\Component\Ra_events\Site\Controller;
@@ -44,6 +46,7 @@ use Ramblers\Component\Ra_tools\Site\Helpers\ToolsTable;
 class BookingController extends FormController {
 
     protected $app;
+    protected $current_user_id;
     protected $id;
     protected $table;
     protected $toolsHelper;
@@ -55,9 +58,10 @@ class BookingController extends FormController {
         parent::__construct();
         $this->app = Factory::getApplication();
         $this->id = $this->app->input->getInt('id', '0');
+        $this->current_user_id = Factory::getApplication()->getSession()->get('user')->id;
         $this->table = Factory::getApplication()->bootComponent('com_ra_events')->getMVCFactory()->createTable('Bookings', 'Administrator');
-        if ($id > 0) {
-            $this->table->load($id);
+        if ($this->id > 0) {
+            $this->table->load($this->id);
         }
         $this->toolsHelper = new ToolsHelper;
         $this->bookingHelper = new BookingHelper;
@@ -261,9 +265,41 @@ class BookingController extends FormController {
         $this->setRedirect($target);
     }
 
+    public function resendConfirmation() {
+        $id = $this->app->input->getInt('id', '0');
+        $event_id = $this->app->input->getInt('event_id', '0');
+        $menu_id= $this->app->input->getInt('Itemid', '0');
+        if (($id == 0) || ($event_id == 0)) {
+            Factory::getApplication()->enqueueMessage('Invalid booking id or event id', 'error');
+        } else {
+            $this->bookingHelper->sendAcknowledgement($id,1);
+            Factory::getApplication()->enqueueMessage('Confirmation resent', 'info');
+        }
+        $target = 'index.php?option=com_ra_events&task=booking.showBookings&event_id=' . $event_id;
+        $target .= '&Itemid=' . $menu_id;
+        $this->setRedirect($target);
+    }
+
     public function selectUsers() {
         $event_id = $this->app->input->getInt('event_id', '0');
         $menu_id = $this->app->input->getInt('Itemid', '0');
+        
+        // Check if event is in the future
+        $sql = 'SELECT event_date FROM #__ra_events WHERE id=' . $event_id;
+        $event = $this->toolsHelper->getItem($sql);
+        if (!is_null($event)) {
+            $event_date = new \DateTime($event->event_date);
+            $today = new \DateTime('today');
+            if ($event_date < $today) {
+                Factory::getApplication()->enqueueMessage('Cannot select users for past events', 'error');
+                $target = 'index.php?option=com_ra_events&task=booking.showBookings&event_id=' . $event_id;
+                $target .= '&Itemid=' . $menu_id;
+                $this->setRedirect(Route::_($target, false));
+                $this->redirect();
+                return;
+            }
+        }
+        
 // event_id cannot be passed to the view directly, so it is stored in the State
         $this->app->setUserState('com_ra_events.profiles.event_id', $event_id);
         $this->app->setUserState('com_ra_events.profiles.menu_id', $menu_id);
@@ -297,18 +333,26 @@ class BookingController extends FormController {
     }
 
     public function showBookings() {
-
+        // Check User is logged in
+        if ($this->current_user_id == 0) {
+            throw new \Exception('You must be logged in to view bookings', 403);
+        }  
         $event_id = $this->app->input->getInt('event_id', '0');
         $menu_id = $this->app->input->getInt('Itemid', '0');
         $print = $this->app->input->getWord('print', 'N');
 // Set up callback so after editing a booking, control passes back to here
         $this->app->setUserState('com_ra_events.event.callback', 'showBookings');
-        $sql = 'SELECT e.id, e.title, e.booking1, e.booking2, c.user_id ';
+        $sql = 'SELECT e.id, e.title, e.booking1, e.booking2, e.event_date, c.user_id ';
         $sql .= 'FROM #__ra_events AS e ';
         $sql .= 'INNER JOIN #__contact_details AS c ON c.id = e.contact_id ';
         $sql .= 'WHERE e.id=' . $event_id;
         $item = $this->toolsHelper->getItem($sql);
         $title = $item->title;
+        
+        // Check if event is in the future
+        $event_date = new \DateTime($item->event_date);
+        $today = new \DateTime('today');
+        $is_future_event = ($event_date >= $today);
         echo '<h2>Bookings for ' . $title . '</h2>';
 
         $canEdit = false;
@@ -327,6 +371,7 @@ class BookingController extends FormController {
 //            throw new \Exception('This function only available to the event organiser', 403);
 //        }
 		$target_email = 'index.php?option=com_ra_tools&task=system.eventAttendees&id=';
+        $target_resend = 'index.php?option=com_ra_events&task=booking.resendConfirmation&id=';
 
         $table = new ToolsTable;
         $header = 'Status, Name, Places, Other ';
@@ -387,8 +432,13 @@ class BookingController extends FormController {
                 $target = $target_edit . '&event_id=' . $row->event_id . '&user_id=' . $row->user_id;
                 $target .= '&id=' . $row->id;
                 $actions = $this->toolsHelper->buildButton($target, 'Edit', False, 'sunset');
-                $table->add_item($actions);
-            }
+                if ($row->state == 1) {
+                    $target = $target_resend . '&event_id=' . $row->event_id . '&menu_id=' . $row->user_id;
+                    $target .= '&id=' . $row->id;
+                    $actions .= $this->toolsHelper->buildButton($target, 'Resend confirmation', False, 'sunrise');             
+                }
+                 $table->add_item($actions);
+                }
             $table->generate_line();
         }
         $table->generate_table();
@@ -520,15 +570,21 @@ class BookingController extends FormController {
         $this->confirmBooking();
     }
 
-    public function testInvitation() {
+    public function test2() {
         $bookingHelper = new BookingHelper;
-
+        // test acknowledgement
+        $booking_id = 103;
+        $bookingHelper->sendAcknowledgement($booking_id,1);   
+  
+    return;
+        // test invitation
         $user_id = 1213; //
         $event_id = 63; // Ludlow
+         echo $bookingHelper->generateInvitation($event_id, $user_id);
 //        $token = $bookingHelper->generateInvitation($event_id, $user_id);
 //        $target = 'index.php?option=com_ra_events&task=booking.processEmail&token=' . $token . ')';
 //        echo $this->toolsHelper->buildLink($target, 'Go',true);
-        echo $bookingHelper->generateInvitation($event_id, $user_id);
+       
     }
 
 }

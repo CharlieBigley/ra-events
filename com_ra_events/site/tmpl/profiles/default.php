@@ -1,6 +1,6 @@
 <?php
 /**
- * @version    2.4.6
+ * @version    2.4.7
  * @package    com_ra_events
  * @author     Charlie Bigley <charlie@bigley.me.uk>
  * @copyright  2025 Charlie Bigley
@@ -9,6 +9,7 @@
  * 07/07/25 CB use sub-query, multiBook
  * 21/07/25 CB use $this->user
  * 04/02/26 CB change multibook butoon to form_submit
+ * 25/02/26 CB don't show Multibook if custom gfileds are present
  */
 // No direct access
 defined('_JEXEC') or die;
@@ -27,9 +28,14 @@ HTMLHelper::_('bootstrap.tooltip');
 HTMLHelper::_('behavior.multiselect');
 HTMLHelper::_('formbehavior.chosen', 'select');
 
+// Import CSS
+$wa = $this->document->getWebAssetManager();
+$wa->registerAndUseStyle('ramblers.css', 'com_ta_tools/css/ramblers.css');
+
 $listOrder = $this->state->get('list.ordering');
 $listDirn = $this->state->get('list.direction');
-echo '<h2>Selecting Bookings for <i>' . $this->event_name . '</i></h2>';
+echo '<h2>Selecting Bookings for <i>' . $this->event_title . '</i></h2>';
+  
 $bookingHelper = new BookingHelper;
 $canCreate = $this->user->authorise('core.create', 'com_ra_events') && file_exists(JPATH_COMPONENT . DIRECTORY_SEPARATOR . 'forms' . DIRECTORY_SEPARATOR . 'profileform.xml');
 $canEdit = $this->user->authorise('core.edit', 'com_ra_events') && file_exists(JPATH_COMPONENT . DIRECTORY_SEPARATOR . 'forms' . DIRECTORY_SEPARATOR . 'profileform.xml');
@@ -37,10 +43,6 @@ $canCheckin = $this->user->authorise('core.manage', 'com_ra_events');
 $canChange = $this->user->authorise('core.edit.state', 'com_ra_events');
 $canDelete = $this->user->authorise('core.delete', 'com_ra_events');
 
-// Import CSS
-$wa = $this->document->getWebAssetManager();
-$wa->useStyle('com_ra_events.list');
-$wa->registerAndUseStyle('ramblers', 'com_ra_tools/ramblers.css');
 //echo 'url ' . htmlspecialchars(Uri::getInstance()->toString()) . '<br>';
 ?>
 
@@ -179,11 +181,12 @@ $wa->registerAndUseStyle('ramblers', 'com_ra_tools/ramblers.css');
     <?php echo HTMLHelper::_('form.token'); ?>
 </form>
 <div class="controls">
-
+     <?php if ($this->multibook) : ?>               
     <button class="btn btn-primary" onclick="Joomla.submitform('profiles.multiBook', document.getElementById('adminForm'));">
         <span class="fas fa-check" aria-hidden="true"></span>
         <?php echo Text::_('Multi-book'); ?>
     </button>
+    <?php endif; ?>
     <a class="btn btn-danger"
        href="<?php echo Route::_('index.php?option=com_ra_events&task=profiles.cancel'); ?>"
        title="<?php echo Text::_('JCANCEL'); ?>">

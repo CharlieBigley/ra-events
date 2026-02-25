@@ -27,8 +27,16 @@
             filter="alnum"
             label="Default Group code"
             description="Default Group for each Event"
-            >
-        </field> 
+        /> 
+        <field name="website_base"
+                type="text"
+                label="Website address" 
+                description="Used when creating links in emails" 
+                required="true"
+                hint="https://xxxramblers.org.uk"/>
+
+    </fieldset>
+    <fieldset label="Emails" name="emails">
         <field name="email_header" 
                editor="|" 
                buttons="true" 

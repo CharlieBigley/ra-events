@@ -2,7 +2,7 @@
 
 /**
  * Contains functions used in the back end and the front end
- * @version    2.4.3
+ * @version    2.4.7
  * @package    com_ra_events
  * @author     Charlie Bigley <webmaster@bigley.me.uk>
  * @copyright  2023 Charlie Bigley
@@ -18,6 +18,8 @@
  * 05/11/25 CB allow for confirmed bookings without "confirmed by"
  * 14/11/25 CB correct display of booking date
  * 06/12/25 CB show special_request on extract & email notification
+ * 22/02/26 CB ensure user is logged in showBookings, disallow selection of users for past events
+ * 25/02/26 CB changes to confirmation email
  */
 
 namespace Ramblers\Component\Ra_events\Site\Helpers;
@@ -87,6 +89,7 @@ class BookingHelper {
 
     private function countBookingsSite($event_id) {
 // Invoked from showBookings
+
 // Find total number of bookings, return a descriptive string
         //$sql = 'SELECT SUM(b.num_places) AS num ';
         $sql = 'SELECT COUNT(b.id) AS num ';
@@ -590,15 +593,16 @@ class BookingHelper {
 //        echo $length . $value . '<br>';
         return $length . $value;
     }
+        public function sendAcknowledgement($booking_id, $mode){
+    // Always sends acknowledgement to the booker
+    // If mode =2, also notifies the organiser
 
-    public function notifyOrganiser($booking_id) {
-// Send a message to the event organiser
         $date = Factory::getDate('now', Factory::getConfig()->get('offset'))->toSql(true);
         $eventHelper = new EventsHelper;
 
         $sql = 'SELECT b.user_id, b.event_id, e.title, ';
         $sql .= 'c.name AS `organiser`, p.preferred_name, u.email, ';
-        $sql .= 'e.max_bookings,e.booking1, e.booking2 ';
+        $sql .= 'e.booking_info, e.max_bookings,e.booking1, e.booking2 ';
         $sql .= 'FROM #__ra_bookings AS b ';
         $sql .= 'INNER JOIN #__ra_events AS e ON e.id=b.event_id ';
         $sql .= 'INNER JOIN #__contact_details AS c ON c.id=e.contact_id ';
@@ -606,15 +610,56 @@ class BookingHelper {
         $sql .= 'INNER JOIN #__users AS u ON u.id=c.user_id ';
         $sql .= 'WHERE b.id=' . $booking_id;
         $item = $this->toolsHelper->getItem($sql);
-
+        if (is_null($item)) {
+            return 'Booking not found';
+        }
 // get name and email of the booker
         $sql = 'SELECT p.preferred_name, u.email ';
         $sql .= 'FROM #__ra_profiles AS p ';
         $sql .= 'INNER JOIN #__users AS u ON u.id= p.id ';
         $sql .= 'WHERE p.id=' . $item->user_id;
         $new_booker = $this->toolsHelper->getItem($sql);
+        if (is_null($new_booker)) {
+            return 'Booker not found';
+        }   
 //       var_dump($new_booker);
 //       die;
+        $title = 'Booking acknowledgement for ' . $item->title;
+
+        $body = $eventHelper->emailHeader($item->event_id, '2');
+        $body .= 'Dear ' . $new_booker->preferred_name . ',<br><br>';
+        $body .= 'This is to acknowledge you made a provisional booking at ' . HTMLHelper::_('date', $date, 'H:i');
+        $body .= ' on ' . HTMLHelper::_('date', $date, 'd M y') . '<br><br>';
+        $body .= '<b>' . $item->title . '</b>.<br><br>';
+
+        $body .= '<div style="color: red;">';
+        $body .= '<b>Booking information</b> ' . $item->booking_info. '<br>'; 
+        $body .= '</div>';
+        $body .= 'The organiser will contact you to confirm your booking<br>'; 
+        $body .= 'If you have any questions, please contact the organiser <b>';
+        $body .=  $item->organiser. '</b> <br>'; 
+        // If going to include a link, website address must be given from the component parameters
+        $params = ComponentHelper::getParams('com_ra_events');
+        $website = $params->get('website_base', '');
+        if ($website !== '') {
+            $website = ToolsHelper::addSlash($website);  // add a trailing slash if necessary
+            $target_email = $website .'index.php?option=com_ra_tools&task=system.eventOrganiser&id=' . $item->item_id; 
+            $body .= $this->toolsHelper->buildLink($target_email, 'Send email<span class="icon-envelope" aria-hidden="true"></span>', false); 
+            $body .= '<br>';
+
+            $body .= 'To see the Terms and Conditions, visit the website using the link below<br>';
+            $target =  $website .'index.php?option=com_ra_events&task=event.showTerms';
+            $body .= $this->toolsHelper->buildLink($target, 'View Terms and Conditions', false); 
+            $body .= '<br>';
+            }
+// send the email
+        $this->toolsHelper->sendEmail($new_booker->email, $item->email, $title, $body);
+
+        if ($mode == 1) {
+            return; // Only send acknowledgement to booker
+        }
+//=============================================================================        
+         // Send a message to the event organiser
         $title = 'New booking for ' . $item->title;
 
         $body = $eventHelper->emailHeader($item->event_id, '3');
@@ -710,12 +755,29 @@ class BookingHelper {
          * current bookings, plus action buttons as appropriate
          *
          * callback will the layout to list events, or an event_type_id
-         */
-
+         */ 
+// Check this event is bookable        
         if ($bookable == 0) {
             return '';
         }
-// get any bookings, confirmed or provisional
+// get details of the Event
+        $sql = 'SELECT e.*, c.user_id, s.* ';
+        $sql .= 'FROM #__ra_events AS e ';
+        $sql .= 'LEFT JOIN #__contact_details AS c ON c.id = e.contact_id ';
+        $sql .= 'LEFT JOIN #__ra_api_sites AS s ON s.id = e.api_site_id ';
+        $sql .= 'WHERE e.id=' . $event_id . ' ';
+
+        $event = $this->toolsHelper->getItem($sql);
+        if (is_null($event)) {
+            throw new \Exception('Event not found', 404);
+        }        
+        
+        // Check if event is in the future
+        $event_date = new \DateTime($event->event_date);
+        $today = new \DateTime('today');
+        $is_future_event = ($event_date >= $today);
+        
+        // get any bookings, confirmed or provisional
         $sql = 'SELECT SUM(b.num_places) AS `tot` ';
         $sql .= 'FROM #__ra_events AS e ';
         $sql .= 'INNER JOIN #__ra_bookings AS b ON b.event_id = e.id  ';
@@ -730,16 +792,13 @@ class BookingHelper {
         $sql .= 'AND e.state=1 ';
         $sql .= 'AND b.state=1 ';
         $confirmed_bookings = $this->toolsHelper->getValue($sql);
- //       $provisional_bookings = $tot_bookings - $confirmed_bookings;
+        
+        // Calculate provisional bookings
+        $tot_places = is_null($tot_bookings) ? 0 : $tot_bookings;
+        $confirmed_places = is_null($confirmed_bookings) ? 0 : $confirmed_bookings;
+        $provisional_bookings = $tot_places - $confirmed_places;
 
-// get details of the Event
-        $sql = 'SELECT e.*, c.user_id, s.* ';
-        $sql .= 'FROM #__ra_events AS e ';
-        $sql .= 'LEFT JOIN #__contact_details AS c ON c.id = e.contact_id ';
-        $sql .= 'LEFT JOIN #__ra_api_sites AS s ON s.id = e.api_site_id ';
-        $sql .= 'WHERE e.id=' . $event_id . ' ';
 
-        $event = $this->toolsHelper->getItem($sql);
 //        echo $sql . '<br>';
        echo 'Total number of spaces ' . $event->max_bookings . '<br>';
         if (is_null($confirmed_bookings)) {
@@ -758,8 +817,12 @@ class BookingHelper {
 // Admin application, just display the literal with no buttons
             return $details;
         }
+// Check User is logged in
+        if ($this->current_user_id == 0) {
+ //           throw new \Exception('You must be logged in to view bookings', 403);
+            return $details;
+        }  
 
- //       $details .= '<br>Confirmed bookings: <b>' . $confirmed_bookings . '</b><br>';
 
         // See if this Event has been imported from another site
         if (!is_null($event->api_site_id)) {
@@ -799,7 +862,7 @@ class BookingHelper {
                 $details .= $this->toolsHelper->buildButton($link, $label, false, 'sunset');
             }
 
-            if ($available > 0) {
+            if ($available > 0 && $is_future_event) {
                 $select = $target . '&task=booking.selectUsers&event_id=' . $event_id;
                 $details .= '<a>' . $this->toolsHelper->buildButton($select, 'Select Users') . '</a>';
             }
@@ -861,7 +924,7 @@ class BookingHelper {
 
             $details .= '<br>If you have changed your mind, please contact the organiser<br>';
         } else {
-            if ($available > 0) {
+            if ($available > 0 && $is_future_event) {
                 if (($event->max_bookings - $confirmed_bookings - $provisional_bookings ) <2) {
                     $details .= '<br><b>WARNING: <b> If you make a booking,and the existing provisional bookings are accepted, ';
                     $details .= 'yours may not be possible</b><br>';

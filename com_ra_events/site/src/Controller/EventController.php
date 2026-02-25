@@ -1,7 +1,7 @@
 <?php
 
 /**
- * @version    2.3.6
+ * @version    2.4.7
  * @component  com_ra_events
  * @author     Charlie Bigley <webmaster@bigley.me.uk>
  * @copyright  2023 Charlie Bigley
@@ -12,6 +12,7 @@
  * 22/10/25 CB sort by custom fields
  * 03/11/25 CB for custom sort, also sort by name
  * 21/11/25 CB show special requests in CSV
+ * 25/02/26 CB showTerms (invoked from link in confirmation email)
  */
 
 namespace Ramblers\Component\Ra_events\Site\Controller;
@@ -483,7 +484,7 @@ echo 'mode is ' . $mode . '<br>';
 
         $objTable->generate_table();
         echo 'Total number of emails ' . $total . '<br>';
-//      Always retun to view event, bur ensure it in turn can return to
+//      Always return to view event, bur ensure it in turn can return to
 //      its calling program
         $back = 'index.php?option=com_ra_events&view=event&id=' . $event_id;
         if (is_numeric($callback)) {
@@ -496,4 +497,29 @@ echo 'mode is ' . $mode . '<br>';
         echo $this->toolsHelper->backButton($back);
     }
 
+    public function showTerms(){
+        $title = 'Bookings: Terms and Conditions';
+        $sql = 'SELECT `introtext` from #__content WHERE title="' . $title . '"';
+//        echo $sql;
+        $introtext = $this->toolsHelper->getValue($sql);
+        if (is_null($introtext) OR ($introtext == '')) {
+  echo '<h2>Terms of Use</h2>';
+
+echo 'We store details of your real name and email address for the purposes of communicating to you by email and for managing bookings that you make for Events.' . '<br><br>';
+
+echo 'In addition, we hold a "preferred name" of your choice, and this is shown above. '
+ . 'The organiser of the Event will only be able to see this "preferred name" when using reports from the system.' . '<br><br>';
+
+echo 'We will never share your personal data with any other organisation. ' . '<br>';
+        } else {
+        echo $introtext . '<br>';
+    }
+         echo $this->toolsHelper->backButton($back);
+    }
+
+    public function test(){
+        $bookingHelper = new BookingHelper;
+        $bookingHelper->sendAcknowledgement(106,1);
+
+    }
 }

@@ -16,6 +16,7 @@ echo "Building com_ra_events-${VERSION}.zip..."
 echo "  - Compressing files..."
 zip -r "com_ra_events-${VERSION}.zip" \
   administrator \
+  api \
   site \
   installer \
   modules \

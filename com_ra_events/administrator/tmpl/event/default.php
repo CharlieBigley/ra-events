@@ -1,7 +1,7 @@
 <?php
 
 /**
- * @version    2.1.9
+ * @version    2.4.6
  * @component  com_ra_events
  * @author     Charlie Bigley <webmaster@bigley.me.uk>
  * @copyright  2023 Charlie Bigley
@@ -10,6 +10,7 @@
  * 11/04/25 CB show number of bookings
  * 30/06/25 CB Show imported Events in a different colour
  * 06/08/25 CB pass additional parameter to bookingHelper->showBookings
+ * 12/02/26 CB delete reference to non-existent field event_id
  */
 // No direct access
 defined('_JEXEC') or die;
@@ -39,14 +40,14 @@ if (($this->event_type_id > 1) AND ($this->event_type_id < 5)) {
     $back .= '&layout=committee'; // Committee Meetings / WM
 }
 echo $this->toolsHelper->backButton($back);
-if ($this->item->event_id != 1) {
-    // Lookup the contact for the event
-    $sql = 'SELECT c.name FROM `#__ra_events` AS e ';
-    $sql .= 'LEFT JOIN #__contact_details AS c ON c.id = e.contact_id ';
-    $sql .= 'WHERE e.id=' . $this->item->id;
-    $contact = $this->toolsHelper->getValue($sql);
+
+// Lookup the contact for the event
+$sql = 'SELECT c.name FROM `#__ra_events` AS e ';
+$sql .= 'LEFT JOIN #__contact_details AS c ON c.id = e.contact_id ';
+$sql .= 'WHERE e.id=' . $this->item->id;
+$contact = $this->toolsHelper->getValue($sql);
 //    echo $sql;
-}
+
 echo '<h3>' . $this->event_type . '</h3>';
 if ($this->event_type_id == 4) {  // Holiday
     echo '<h2>' . HTMLHelper::_('date', $this->item->event_date, 'd-M-y') . ' to ';

@@ -109,7 +109,7 @@ class HtmlView extends BaseHtmlView {
             }
 
             if (isset($this->items[0]->state)) {
-                $childBar->trash('bookings.trash')->listCheck(true);
+                $childBar->trash('bookings.trash')->text('Delete')->listCheck(true);
             }
         }
         // Show trash and delete for components that uses the state field

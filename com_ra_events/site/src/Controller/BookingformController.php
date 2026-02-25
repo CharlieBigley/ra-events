@@ -1,7 +1,7 @@
 <?php
 
 /**
- * @version    2.4.2
+ * @version    2.4.7
  * @package    com_ra_events
  * @author     Charlie Bigley <charlie@bigley.me.uk>
  * @copyright  2025 Charlie Bigley
@@ -247,6 +247,7 @@ class BookingformController extends FormController {
         //       echo "user $user_id<br>";
         $data['user_id'] = (int) $user_id;
         // Attempt to save the data.
+        // Extra processing to send emails etc. is done in the save function of the Model
         $return = $model->save($data);
 //       die('Controller after save');
         // Check for errors.

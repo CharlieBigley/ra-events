@@ -1,11 +1,12 @@
 <?php
 
 /**
- * @version    2.1.3
+ * @version    2.4.7
  * @package    com_ra_events
  * @author     Charlie Bigley <charlie@bigley.me.uk>
  * @copyright  2025 Charlie Bigley
  * @license    GNU General Public License version 2 or later; see LICENSE.txt
+ * 25/02/25 CB Define multibook
  */
 
 namespace Ramblers\Component\Ra_events\Site\View\Profiles;
@@ -32,7 +33,8 @@ class HtmlView extends BaseHtmlView implements CurrentUserInterface {
     protected $state;
     protected $params;
     protected $event_id;
-    protected $event_name;
+    protected $event_title;
+    protected $multibook;
     protected $toolsHelper;
 
     /**
@@ -58,9 +60,15 @@ class HtmlView extends BaseHtmlView implements CurrentUserInterface {
 //        $app->setUserState('com_ra_events.profiles.user_id', $this->event_id);
         // Lookup names for Event
         $this->toolsHelper = new ToolsHelper;
-        $sql = 'SELECT title FROM `#__ra_events` WHERE id=' . $this->event_id;
-        $this->event_name = $this->toolsHelper->getValue($sql);
-
+        $sql = 'SELECT * FROM `#__ra_events` WHERE id=' . $this->event_id;
+        $this->event = $this->toolsHelper->getItem($sql);
+        $this->event_title = $this->event->title;
+        if ((is_null($this->event->booking1) AND is_null($this->event->booking2)) 
+            OR (($this->event->booking1 == '') AND ($this->event->booking2 == ''))) {
+            $this->multibook = true;            
+        } else {
+            $this->multibook = false;
+        }
         $this->state = $this->get('State');
         $this->items = $this->get('Items');
         $this->pagination = $this->get('Pagination');

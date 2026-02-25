@@ -1,7 +1,7 @@
 <?php
 
 /**
- * @version    2.4.1
+ * @version    2.4.7
  * @package    com_ra_events
  * @author     Charlie Bigley <charlie@bigley.me.uk>
  * @copyright  2025 Charlie Bigley
@@ -12,6 +12,7 @@
  * 29/09/25 CB Don't check user access
  * 03/11/25 CB change filter from word to string
  * 13/11/25 CB correct declaration of toolsHelper
+ * 24/02/26 Send email confirmation
  */
 
 namespace Ramblers\Component\Ra_events\Site\Model;
@@ -355,8 +356,11 @@ class BookingformModel extends FormModel implements CurrentUserInterface {
                 $booking_id = $toolsHelper->getValue($sql);
                 Factory::getApplication()->setUserState('com_ra_events.bookingform.id', $booking_id);
                 if ($notify_organiser == '1') {
-                    $bookingHelper->notifyOrganiser($booking_id);
+                    $mode = 2;
+                } else {
+                    $mode = 1;
                 }
+                $bookingHelper->sendAcknowledgement($booking_id, $mode);
                 return $table->id;
             } else {
                 Factory::getApplication()->enqueueMessage($table->getError(), 'error');

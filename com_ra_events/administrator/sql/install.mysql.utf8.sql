@@ -7,6 +7,7 @@
 # 07/07/25 CB removed api_sites
 # 10/09/25 CB delete event_time_end
 # 02/10/25 CB 2.5.0: extra fields to cutomise bookings
+# 12/02/26 CB delete events/cat_id
 #-------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `#__ra_bookings` (
     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -43,7 +44,6 @@ CREATE TABLE IF NOT EXISTS `#__ra_events` (
     `group_code` varchar(4) NOT NULL,
     `location` text NULL,
     `contact_id` int(11) DEFAULT "0",
-    `cat_id` int(11) DEFAULT "0",
     `url` VARCHAR(255)  NULL  DEFAULT "",
     `url_description` VARCHAR(255)  NULL  DEFAULT "",
     `attachments` VARCHAR(255)  NULL  DEFAULT "",

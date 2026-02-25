@@ -1,7 +1,7 @@
 <?php
 
 /**
- * @version    2.4.4
+ * @version    2.4.6
  * @component  com_ra_events
  * @author     Charlie Bigley <webmaster@bigley.me.uk>
  * @copyright  2023 Charlie Bigley
@@ -15,6 +15,8 @@
  * 15/09/25 CB breadcrumbs, show remote attachments
  * 03/11/25 CB pass menu_id to helper / showBookings
  * 05/02/16 CB correction for remote attachments
+ * 11/02/26 CB show message about site from which shared, if remote
+ * 12/02/26 CB delete reference to non-existent field event_id, show group name
  */
 // No direct access
 defined('_JEXEC') or die;
@@ -48,15 +50,14 @@ if ($this->layout == '') {
 echo '<' . $this->toolsHelper->buildLink($back, 'Back to list of Events');
 $target_email = 'index.php?option=com_ra_tools&task=system.eventOrganiser&id=';
 
-if ($this->item->event_id != 1) {
-    // Lookup the contact for the event
-    $sql = 'SELECT c.name FROM `#__ra_events` AS e ';
-    $sql .= 'LEFT JOIN #__contact_details AS c ON c.id = e.contact_id ';
+// Lookup the contact for the event
+$sql = 'SELECT c.name FROM `#__ra_events` AS e ';
+$sql .= 'LEFT JOIN #__contact_details AS c ON c.id = e.contact_id ';
 //    $sql .= 'LEFT JOIN #__ra_profiles AS p ON p.id = e.contact_id ';
-    $sql .= 'WHERE e.id=' . $this->item->id;
-    $contact = $this->toolsHelper->getValue($sql);
+$sql .= 'WHERE e.id=' . $this->item->id;
+$contact = $this->toolsHelper->getValue($sql);
 //    echo $sql;
-}
+
 echo '<h3>' . $this->event_type . '</h3>';
 
 if (is_null($this->item->api_site_id)) {
@@ -65,8 +66,10 @@ if (is_null($this->item->api_site_id)) {
     $sql = 'SELECT * FROM #__ra_api_sites WHERE id=' . $this->item->api_site_id;
     $site = $this->toolsHelper->getItem($sql);
     echo '<div style="background: ' . $site->colour . '; ">';
-}
-
+//    if (!is_null($this->item->api_site_id)) {
+     echo '<i>Event shared by ' . $site->title . '</i><br>';
+//}
+}  
 
 if ($this->event_type_id == 4) {  // Holiday
     echo '<h2>' . HTMLHelper::_('date', $this->item->event_date, 'd-M-y') . ' to ';
@@ -75,6 +78,7 @@ if ($this->event_type_id == 4) {  // Holiday
     echo '<h2>' . HTMLHelper::_('date', $this->item->event_date, 'l d M y');
 }
 echo ' <b>' . $this->item->title . '</b></h2>';
+
 /* printing commented out 13/02/23
   $target_print = "index.php?option=com_ra_events&view=event&tmpl=component&Itemid=" . $this->menu_id . '&id=';
   $target_print .= '&layout=' . $this->layout
@@ -182,15 +186,17 @@ if ($this->event_type_id == '1') {
         echo $this->item->minutes;
     }
 }
-
-if (!$this->item->url == "") {
-    echo '<h4>' . $this->item->url_description . '</h4>';
-    echo $this->toolsHelper->buildLink($this->item->url, $this->item->url, True);
-}
-if ($this->item->attachments != "") {
-    echo '<h4>' . $this->item->attachment_description . '</h4>';
-    if (is_null($this->item->api_site_id)) {
-        $target = Juri::Base();
+if (is_null($this->item->api_site_id)) { 
+    echo '<b>Group:</b> ' . $this->toolsHelper->lookupGroup($this->item->group_code) . '<br>'; 
+} 
+if (!$this->item->url == "") { 
+    echo '<b>' . $this->item->url_description . '</b>' ; 
+    echo $this->toolsHelper->buildLink($this->item->url, $this->item->url, True); 
+} 
+if ($this->item->attachments != "") { 
+    echo '<b>' . $this->item->attachment_description . '</b> '; 
+    if (is_null($this->item->api_site_id)) { 
+        $target = Juri::Base(); 
     } else {
         $target = $site->url . '/';
     }

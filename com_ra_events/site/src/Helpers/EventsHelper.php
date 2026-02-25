@@ -2,7 +2,7 @@
 
 /**
  * Contains functions used in the back end and the front end
- * @version    2.2.4
+ * @version    2.4.7
  * @package    com_ra_events
  * @author     Charlie Bigley <webmaster@bigley.me.uk>
  * @copyright  2023 Charlie Bigley
@@ -14,7 +14,8 @@
  * 15/09/25 CB show Profiles (if MailMan not installed)
  * 18/09/25 CB ensure num_bookings is integer (for Committee meetings it will be blank)
  * 24/09/25 CB correct lookupConrtact
- * 08/02/26 CB Don't create new events if stsus = 0 (unpublished), but update if they exist
+ * 08/02/26 CB Don't create new events if status = 0 (unpublished), but update if they exist
+ * 25/02/26 CB changes to email header and body for new booking confirmation, show booking_info in red
  */
 
 namespace Ramblers\Component\Ra_events\Site\Helpers;
@@ -75,42 +76,61 @@ class EventsHelper {
         echo $this->toolsHelper->backButton($back);
     }
 
-    public function emailHeader($event_id, $record_type) {
+        public function emailHeader($event_id, $record_type) {
+        /*
+         * Generates the responsive email header with text left-aligned and logo right-aligned
+         * Uses flexbox for responsive layout that works on all screen sizes
+         */
+        $logo = '/images/com_ra_events/logo.png';
         $params = ComponentHelper::getParams('com_ra_events');
-//      Set the div for the header as a whole
-        $header = '<div style="background-color: ' . $params->get('colour_header', 'rgba(20, 141, 168, 0.5)') . ';';
-        $header .= ' height: ' . ($params->get('header_height')) . 'px; ';
-        $header .= ' border-radius: 5%; padding: 10px; "';
-        $header .= '>';
 
-//      Set the div for the header text
-        $header .= '<div style="float: left; ">';
+// Set the div for the header as a whole using flexbox for responsive layout
+// In due course, can just user $header = $this->toolsHelper->buildEmailPreamble();
+        $header = '<div style="';
+        $header .= 'display: flex; ';
+        $header .= 'justify-content: space-between; ';
+        $header .= 'align-items: center; ';
+        $header .= 'gap: 20px; ';
+        $header .= 'background: ' . $params->get('colour_header', 'rgba(20, 141, 168, 0.5)') . '; ';
+        $header .= 'border-radius: 5%; ';
+        $header .= 'padding: 20px; ';
+        $header .= 'box-sizing: border-box; ';
+        $header .= 'width: 100%; ';
+        $header .= 'max-width: 100%; ';
+        $header .= 'overflow: hidden; ';
+        $header .= '">';
+
+//      Set the div for the header text (left-aligned, flexible width, shrinks on small screens)
+        $header .= '<div style="flex: 1 1 auto; text-align: left; min-width: 0; overflow-wrap: break-word;">';
         $header_text = $params->get('email_header', 'Send from RA Events');
-        $header .= $header_text . '<br>';
-
+        $header_text .= '<br>';
 // Add the text
         if ($record_type == '1') {
-            $header .= 'Enquiry to organiser of:';
+            $header_text .= 'Enquiry to organiser of: ';
+        } elseif ($record_type == '2') {    
+            $header_text .= 'Confirmation of Booking: ';
         } elseif ($record_type == '3') {
-            $header .= 'New booking:';
+            $header_text .= 'New booking:';
         } else {
-            $header .= 'Message to everyone booked onto:';
+            $header_text .= 'Message to everyone booked onto: ';
         }
-        $header .= '<br><b>';
         $sql = 'SELECT title FROM #__ra_events WHERE id=' . $event_id;
-        $header .= $this->toolsHelper->getValue($sql);
-        $header .= '</b></div>';
+        $header_text .= $this->toolsHelper->getValue($sql);        
+        $header .= $header_text;
+        $header .= '</div>';
 
-//      Add the logo
-        $logo = '/images/com_ra_events/logo.png';
-        $logo_align = 'right';
-        $image_data = file_get_contents(JPATH_ROOT . $logo);
-        $encoded = base64_encode($image_data);
-        $header .= '<a  href="' . $params->get('website') . '" >';
-        $header .= "<img src='data:image/jpeg;base64,{$encoded}' style='float: ";
-        $header .= $logo_align . ";'";
-        $header .= ' height="' . $params->get('image_height') . 'px" width="' . $params->get('image_width') . 'px">';
-        $header .= "</a>";
+//      Logo (right-aligned, non-shrinking)
+        if (file_exists(JPATH_ROOT . $logo)) {
+            $image_data = file_get_contents(JPATH_ROOT . $logo);
+            $encoded = base64_encode($image_data);
+            $header .= '<a href="' . $params->get('website') . '" style="flex-shrink: 0; display: flex; margin-left: auto;">';
+            $header .= '<img src="data:image/jpeg;base64,' . $encoded . '" ';
+            $header .= 'style="height: ' . $params->get('height') . 'px; width: ' . $params->get('width') . 'px; display: block; max-width: 100%; height: auto;" ';
+            $header .= 'alt="Logo">';
+            $header .= '</a>';
+        } else {
+            Factory::getApplication()->enqueueMessage('Logo file "' . $logo . '" not found', 'warning');
+        }
 
         $header .= '</div>';
         return $header;
@@ -356,9 +376,12 @@ class EventsHelper {
             $id = $events[$i]['id'];
             $objTable->add_item($id);
             $attributes = (object) $event['attributes'];
-//            echo $i . '<br>';
-//            var_dump($attributes);
-//            echo '<br>';
+            if (JDEBUG) {
+                if ($i == 1) {
+                    var_dump($attributes);
+                    echo '<br>';
+                }   
+            }         
             $objTable->add_item($attributes->state);
             $objTable->add_item($attributes->event_date);
             $objTable->add_item($attributes->title);

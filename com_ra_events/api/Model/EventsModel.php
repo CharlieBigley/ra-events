@@ -1,7 +1,7 @@
 <?php
 
 /**
- * @version    2.2.5
+ * @version    2.4.6
  * @component  com_ra_events
  * @author     Charlie Bigley <webmaster@bigley.me.uk>
  * @copyright  2023 Charlie Bigley
@@ -172,15 +172,11 @@ class EventsModel extends ListModel {
         $query->where('shareable=1');
         // Dont show shared events from another site
         $query->where('api_site_id IS NULL');
-        // Don't show events until their publication date
-        $query->where('DATEDIFF(a.publication_date, CURRENT_DATE)<=0');
-        // Except for Committee meetings & Inspections, only show future events
-        if ($this->event_type_id !== 1) {
-            $query->where('DATEDIFF(a.event_date, CURRENT_DATE)>=0');
-            if (JDEBUG) {
-                Factory::getApplication()->enqueueMessage('DATEDIFF(a.event_date, CURRENT_DATE)>=0');
-            }
-        }
+        // Don't show events until their share date
+        $query->where('DATEDIFF(a.share_date, CURRENT_DATE)<=0');
+        // Only show future events
+        $query->where('DATEDIFF(a.event_date, CURRENT_DATE)>=0');
+
         // Search for this word
         $searchWord = $this->getState('filter.search');
 
