@@ -6,7 +6,7 @@
 <extension type="plugin" group="webservices"  method="upgrade">
     <name>PLG_WEBSERVICES_PLG_RA_EVENTS</name>
     <author>Martin King</author>
-    <creationDate>08 Feb 2026</creationDate>
+    <creationDate>16 Feb 2026</creationDate>
     <copyright>2025 Martin King</copyright>
     <license>GNU General Public License version 2 or later; see LICENSE.txt</license>
     <authorEmail>martinkingesra@gmail.com</authorEmail>
@@ -18,7 +18,7 @@
 
     <files>
        <folder plugin="ra_events">services</folder>
-        <folder>src</folder>
+       <folder>src</folder>
     </files>
 	
      <languages>       
