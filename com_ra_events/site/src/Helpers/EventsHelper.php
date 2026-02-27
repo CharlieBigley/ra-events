@@ -16,6 +16,7 @@
  * 24/09/25 CB correct lookupConrtact
  * 08/02/26 CB Don't create new events if status = 0 (unpublished), but update if they exist
  * 25/02/26 CB changes to email header and body for new booking confirmation, show booking_info in red
+ * 26/02/26 CB showFirst - show count of fields
  */
 
 namespace Ramblers\Component\Ra_events\Site\Helpers;
@@ -332,24 +333,45 @@ class EventsHelper {
         $website = $site->url;
         $target = '&id=';
         ToolBarHelper::title('First Shared event for ' . $website);
-        $count = count($events);
+        // Accept either the raw JSON payload (with a data key) or the data array directly.
+        $payload = $events;
+        if (isset($events['data']) && is_array($events['data'])) {
+            $payload = $events['data'];
+        }
 
-        $objTable = new ToolsTable();
-        $objTable->add_header('Field,Value');
-        foreach ($events as $event) {
-            $id = $events[$i]['id'];
+        $count = is_array($payload) ? count($payload) : 0;
+        echo $count . ' events returned<br>';
 
-            $attributes = (object) $event['attributes'];
-//            var_dump($attributes);
+        if ($count === 0) {
+            echo 'No events to display<br>';
+        } else {
+            $event = $payload[0];
+            $eventId = isset($event['id']) ? $event['id'] : '';
+            $eventType = isset($event['type']) ? $event['type'] : '';
+            echo 'event id=' . $eventId . ', type=' . $eventType . '<br>';
+
+            $attributes = isset($event['attributes']) && is_array($event['attributes']) ? $event['attributes'] : array();
+
+            echo '<table class="table">';
+            echo '<tr><th>Field</th><th>Value</th></tr>';
+            $fieldCount = 0;
             foreach ($attributes as $key => $val) {
+                $fieldCount++;
+                if (is_array($val) || is_object($val)) {
+                    $val = json_encode($val);
+                }
                 echo '<tr>';
-                echo "<td>$key</td><td>$val</td>";
+                echo '<td>' . htmlspecialchars((string) $key, ENT_QUOTES, 'UTF-8') . '</td>';
+                echo '<td>' . htmlspecialchars((string) $val, ENT_QUOTES, 'UTF-8') . '</td>';
                 echo '</tr>';
             }
             echo '</table>';
-            break;
+            echo $fieldCount . ' fields<br>';
+
+            if (isset($attributes['contact_name'])) {
+                echo 'contact_id=' . $this->lookupContact($attributes['contact_name']) . '<br>';
+            }
         }
-        echo 'contact_id=' . $this->lookupContact($attributes->contact_name) . '<br>';
         $target = 'administrator/index.php?option=com_ra_tools&view=apisites';
         echo $this->toolsHelper->backButton($target);
         $target = 'administrator/index.php?option=com_ra_tools&task=apisites.refreshEvents&mode=1&id=' . $api_site_id;

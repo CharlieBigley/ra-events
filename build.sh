@@ -31,6 +31,16 @@ zip -r "com_ra_events-${VERSION}.zip" \
 echo "  - Adding manifest to zip root..."
 zip -j "com_ra_events-${VERSION}.zip" administrator/ra_events.xml
 
+echo "  - Verifying required API files..."
+if ! unzip -l "com_ra_events-${VERSION}.zip" | grep -q "api/services/provider.php"; then
+  echo "✗ Error: api/services/provider.php not found in package"
+  exit 1
+fi
+if ! unzip -l "com_ra_events-${VERSION}.zip" | grep -q "api/Model/EventsModel.php"; then
+  echo "✗ Error: api/Model/EventsModel.php not found in package"
+  exit 1
+fi
+
 # Step 3: Verify zip was created
 if [ -f "com_ra_events-${VERSION}.zip" ]; then
   echo "✓ Package created successfully: com_ra_events-${VERSION}.zip"

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * @version    2.4.6
+ * @version    2.4.12
  * @component  com_ra_events
  * @author     Charlie Bigley <webmaster@bigley.me.uk>
  * @copyright  2023 Charlie Bigley
@@ -19,6 +19,8 @@
  * 16/06/25 CB get a.*
  * 01/10/25 CB allow sorting
  * 10/02/26 CB changed namesspace, removed some fields, changed selection criteria
+ * 27/02/26 GPT Changed version to 2.4.12
+ * 27/02/26 GPT Moved tofolder src, renamed to EventsModel, added logging of number of records selected, added caching of contact names, added days_to_go field, corrected event type selection to get description, added selection criteria to only show shared events that are due to be shared and not from another site, added sorting by event date ASC    
  */
 
 namespace Ramblers\Component\Ra_events\Api\Model;
@@ -26,15 +28,15 @@ namespace Ramblers\Component\Ra_events\Api\Model;
 // No direct access.
 defined('_JEXEC') or die;
 
-use \Joomla\CMS\Factory;
-use \Joomla\CMS\Language\Text;
-use \Joomla\CMS\MVC\Model\ListModel;
-use \Joomla\Component\Fields\Administrator\Helper\FieldsHelper;
-use \Joomla\CMS\Helper\TagsHelper;
-use \Joomla\CMS\Layout\FileLayout;
-use \Joomla\Database\ParameterType;
-use \Joomla\Utilities\ArrayHelper;
-use \Ramblers\Component\Ra_tools\Site\Helpers\ToolsHelper;
+use Joomla\CMS\Factory;
+use Joomla\CMS\Language\Text;
+use Joomla\CMS\MVC\Model\ListModel;
+use Joomla\Component\Fields\Administrator\Helper\FieldsHelper;
+use Joomla\CMS\Helper\TagsHelper;
+use Joomla\CMS\Layout\FileLayout;
+use Joomla\Database\ParameterType;
+use Joomla\Utilities\ArrayHelper;
+use Ramblers\Component\Ra_tools\Site\Helpers\ToolsHelper;
 
 /**
  * Methods supporting a list of Ra_events records.
@@ -90,16 +92,9 @@ class EventsModel extends ListModel {
      * @since   1.0.1
      */
     protected function populateState($ordering = null, $direction = null) {
-        // Find the type of event
         $app = Factory::getApplication();
-        $event_type_id = $app->input->getInt('event_type_id', '0');
-        if (($event_type_id > 1) AND ($event_type_id < 5)) {
-            $number_to_show = 5;
-            $default_sort_direction = 'ASC';
-        } else {
-            $default_sort_direction = 'DESC';
-            $number_to_show = 25; // Committee Meetings / WM 
-        }
+        $number_to_show = 25;
+        $default_sort_direction = 'ASC';
 
         // List state information.
         parent::populateState('a.event_date', $default_sort_direction);
@@ -127,18 +122,7 @@ class EventsModel extends ListModel {
         $app->setUserState($this->context . '.list', $list);
 
 
-        $context = $this->getUserStateFromRequest($this->context . '.filter.search', 'filter_search');
-        $this->setState('filter.search', $context);
-
-        // Split context into component and optional section
-        if (!empty($context)) {
-            $parts = FieldsHelper::extract($context);
-
-            if ($parts) {
-                $this->setState('filter.component', $parts[0]);
-                $this->setState('filter.section', $parts[1]);
-            }
-        }
+        // No search or event type filtering for API output.
     }
 
     /**
@@ -149,25 +133,18 @@ class EventsModel extends ListModel {
      * @since   1.0.1
      */
     protected function getListQuery() {
-        // Find the type of event
-        $this->event_type_id = Factory::getApplication()->input->getInt('event_type_id', '0');
-
         $query = $this->_db->getQuery(true);
 
         $query->select('a.*');
         $query->select("event_type.description as event_type");
-        $query->select('c.name');
+        $query->select('c.name AS contact_name');
         $query->select('DATEDIFF(a.event_date, CURRENT_DATE) AS days_to_go');
 
         $query->from('`#__ra_events` AS a');
-        $query->select('c.name', 'contact');
+        // Expose contact name explicitly for the API payload
         $query->leftJoin('#__ra_event_types AS event_type ON event_type.id = a.event_type_id');
         $query->leftJoin('#__contact_details AS c ON c.id = a.contact_id');
         $query->where('a.state = 1');
-        // The Event Type will have been set up in the __construct function, depending on the menu parameter
-        if ($this->event_type_id != 0) {
-            $query->where('a.event_type_id=' . $this->event_type_id);
-        }
         // Only show shared events 
         $query->where('shareable=1');
         // Dont show shared events from another site
@@ -177,35 +154,7 @@ class EventsModel extends ListModel {
         // Only show future events
         $query->where('DATEDIFF(a.event_date, CURRENT_DATE)>=0');
 
-        // Search for this word
-        $searchWord = $this->getState('filter.search');
-
-        // Search in these columns
-        $searchColumns = array(
-            'event_type.description',
-            'a.title',
-            'c.name',
-            'a.location',
-            'a.details',
-            'a.group_code',
-        );
-
-        if (!empty($searchWord)) {
-            if (stripos($searchWord, ' id:') === 0) {
-                // Build the ID search
-                $idPart = (int) substr($searchWord, 3);
-                $query->where($this->_db->qn('a .id') . ' = ' . $this->_db->q($idPart));
-            } else {
-                $query = ToolsHelper::buildSearchQuery($searchWord, $searchColumns, $query);
-            }
-        }
-
-        $orderCol = $this->state->get('list.ordering', 'a.event_date');
-        $orderDirn = $this->state->get('list.direction', 'asc');
-
-        if ($orderCol && $orderDirn) {
-            $query->order($this->_db->escape($orderCol . ' ' . $orderDirn));
-        }
+        $query->order($this->_db->escape('a.event_date ASC'));
         if (JDEBUG) {
             Factory::getApplication()->enqueueMessage($this->_db->replacePrefix($query));
         }
@@ -220,7 +169,45 @@ class EventsModel extends ListModel {
     public function getItems() {
         $items = parent::getItems();
 
+        $db = $this->getDbo();
+        $query = $db->getQuery(true);
+        $query->insert($db->quoteName('#__ra_logfile'))
+            ->set('sub_system = ' . $db->quote('RA Events'))
+            ->set('record_type = ' . $db->quote(10))
+            ->set('ref = ' . $db->quote('events'))
+            ->set('message = ' . $db->quote('Records selected: ' . count($items)));
+        $db->setQuery($query)->execute();
+
+        $contactNameById = array();
+
         foreach ($items as $item) {
+
+            $contactId = isset($item->contact_id) ? (int) $item->contact_id : 0;
+
+            if (!isset($item->contact_name) && $contactId > 0) {
+                if (array_key_exists($contactId, $contactNameById)) {
+                    $item->contact_name = $contactNameById[$contactId];
+                } else {
+                    $db = $this->getDbo();
+                    $query = $db->getQuery(true)
+                        ->select($db->quoteName('name'))
+                        ->from($db->quoteName('#__contact_details'))
+                        ->where($db->quoteName('id') . ' = ' . (int) $contactId);
+
+                    $db->setQuery($query);
+                    $contactNameById[$contactId] = (string) $db->loadResult();
+                    $item->contact_name = $contactNameById[$contactId];
+                }
+            }
+
+            // Hide internal contact_id in API payloads
+            if (isset($item->contact_id)) {
+                unset($item->contact_id);
+            }
+
+            if (!isset($item->contact_name) && isset($item->contact)) {
+                $item->contact_name = $item->contact;
+            }
 
             if (isset($item->event_type_id)) {
 
