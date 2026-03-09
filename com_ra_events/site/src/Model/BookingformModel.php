@@ -337,11 +337,11 @@ class BookingformModel extends FormModel implements CurrentUserInterface {
 
         $table = $this->getTable();
         $toolsHelper = new ToolsHelper;
+        $bookingHelper = New BookingHelper;
         if (empty($id)) {
             // creating a new record
             // See if we need to notify the organiser
-            $sql = 'SELECT notify_organiser FROM #__ra_events WHERE id=' . $data['event_id'];
-            $bookingHelper = New BookingHelper;
+            $sql = 'SELECT notify_organiser FROM #__ra_events WHERE id=' . $data['event_id'];         
             $notify_organiser = $toolsHelper->getValue($sql);
         } else {
             $table->load($id);
@@ -350,17 +350,15 @@ class BookingformModel extends FormModel implements CurrentUserInterface {
 //       die('notify_organiser = ' . $notify_organiser);
         try {
             if ($table->save($data) === true) {
-                // Get the id of the record just created
-                $sql = 'SELECT id FROM #__ra_bookings WHERE event_id=' . $data['event_id'];
-                $sql .= ' AND user_id=' . $data['user_id'];
-                $booking_id = $toolsHelper->getValue($sql);
-                Factory::getApplication()->setUserState('com_ra_events.bookingform.id', $booking_id);
+//                Factory::getApplication()->enqueueMessage('Model:  table id=' . $table->id, 'info');
+                Factory::getApplication()->setUserState('com_ra_events.bookingform.id', $table->id);
                 if ($notify_organiser == '1') {
                     $mode = 2;
                 } else {
                     $mode = 1;
                 }
-                $bookingHelper->sendAcknowledgement($booking_id, $mode);
+                $bookingHelper->sendAcknowledgement($table->id, $mode);
+//                Factory::getApplication()->enqueueMessage('Model:  send acknowledgement for booking id=' . $table->id, 'info');
                 return $table->id;
             } else {
                 Factory::getApplication()->enqueueMessage($table->getError(), 'error');

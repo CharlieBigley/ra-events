@@ -223,9 +223,9 @@ class BookingformController extends FormController {
             // Push up to three validation messages out to the user.
             for ($i = 0, $n = count($errors); $i < $n && $i < 3; $i++) {
                 if ($errors[$i] instanceof \Exception) {
-                    $this->app->enqueueMessage($errors[$i]->getMessage(), 'warning');
+                    $this->app->enqueueMessage('Controller: ' . $errors[$i]->getMessage(), 'warning');
                 } else {
-                    $this->app->enqueueMessage($errors[$i], 'warning');
+                    $this->app->enqueueMessage('Controller: ' . $errors[$i], 'warning');
                 }
             }
 
@@ -249,6 +249,12 @@ class BookingformController extends FormController {
         // Attempt to save the data.
         // Extra processing to send emails etc. is done in the save function of the Model
         $return = $model->save($data);
+        if ($return === false) {
+            $this->app->enqueueMessage('Controller: Save failed: ' . $model->getError(), 'error');
+//        } else  {
+//            $this->app->enqueueMessage('Controller: Save successful', 'error');
+//            $this->app->enqueueMessage('Controller: return=' . $return, 'error');
+        }
 //       die('Controller after save');
         // Check for errors.
         if ($return === false) {

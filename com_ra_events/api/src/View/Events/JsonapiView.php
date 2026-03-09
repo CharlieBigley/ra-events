@@ -1,7 +1,7 @@
 <?php
 
 /**
- * @version    2.4.12
+ * @version    2.4.13
  * @package    com_ra_events
  * @author     Martin King <martinkingesra@gmail.com>
  * @copyright  2025 Martin King
@@ -10,6 +10,7 @@
  * 10/09/25 CB add original_id
  * 27/02/26 CN updated docblock version number
  * 27/02/26 GPT Changed version to 2.4.12
+ * 09/03/26 CB reinstate num_bookings
  */
 
 namespace Ramblers\Component\Ra_events\Api\View\Events;
@@ -54,7 +55,7 @@ class JsonapiView extends BaseApiView {
         'shareable',
         'share_date',
         'bookable',
-//        'num_bookings',
+        'num_bookings',
         'max_bookings',
         'notify_organiser',
         'booking_info',
@@ -91,7 +92,7 @@ class JsonapiView extends BaseApiView {
         'bookable',
         'notify_organiser',
         'booking_info',
-//        'num_bookings',
+        'num_bookings',
         'max_bookings',
         'state',
         'contact_name',

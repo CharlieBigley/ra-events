@@ -2,7 +2,7 @@
 
 /**
  * Contains functions used in the back end and the front end
- * @version    2.4.7
+ * @version    2.4.13
  * @package    com_ra_events
  * @author     Charlie Bigley <webmaster@bigley.me.uk>
  * @copyright  2023 Charlie Bigley
@@ -17,6 +17,7 @@
  * 08/02/26 CB Don't create new events if status = 0 (unpublished), but update if they exist
  * 25/02/26 CB changes to email header and body for new booking confirmation, show booking_info in red
  * 26/02/26 CB showFirst - show count of fields
+ * 09/03/26 CB add function createLog (calls ToolsHelper->createLog)
  */
 
 namespace Ramblers\Component\Ra_events\Site\Helpers;
@@ -38,6 +39,7 @@ class EventsHelper {
     protected $db;
     protected $canDo;
     protected $current_user_id;
+    protected $toolsHelper;
     public $messages;
 
     function __construct() {
@@ -109,7 +111,7 @@ class EventsHelper {
         if ($record_type == '1') {
             $header_text .= 'Enquiry to organiser of: ';
         } elseif ($record_type == '2') {    
-            $header_text .= 'Confirmation of Booking: ';
+            $header_text .= 'Details of Booking: ';
         } elseif ($record_type == '3') {
             $header_text .= 'New booking:';
         } else {
@@ -148,11 +150,17 @@ class EventsHelper {
     }
 
     public function getSharedEvents($site_id) {
+        if (JDEBUG) {
+            $message = 'Site id ' . $site_id . ', ';
+            $message .= 'Seeking events from site id ' . $site_id;
+            $this->messages[] = $message;
+        }
         $sql = 'SELECT * FROM #__ra_api_sites WHERE id=' . $site_id;
 
         $site = $this->toolsHelper->getItem($sql);
         $token = trim($site->token);
         $curl = curl_init();
+       
         $url = $site->url . '/api/index.php/v1/ra_events/events';
         if (JDEBUG) {
             $message = 'Site id ' . $site_id . ', ';
@@ -188,9 +196,17 @@ class EventsHelper {
 //        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);  // do not output result
                 ]
         );
-        $response = curl_exec($curl);
+
+        $rawResponse = curl_exec($curl);
         $error = curl_error($curl);
         $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        $headerSize = curl_getinfo($curl, CURLINFO_HEADER_SIZE);
+        $responseHeaders = '';
+        $responseBody = '';
+        if ($rawResponse !== false) {
+            $responseHeaders = substr($rawResponse, 0, $headerSize);
+            $responseBody = substr($rawResponse, $headerSize);
+        }
 //        if (curl_errno($curl)) {
 //            echo curl_error($curl);
 //        }
@@ -204,16 +220,40 @@ class EventsHelper {
                 $message .= ': ' . $error;
             }
             $this->messages[] = $message;
+            $this->messages[] = 'Endpoint: ' . $endpoint;
+            if ($responseHeaders !== '') {
+                $this->messages[] = 'Response headers: ' . trim($responseHeaders);
+            }
+            if ($responseBody !== '') {
+                $this->messages[] = 'Response body: ' . substr($responseBody, 0, 500);
+            }
 //            return false;
         }
-        $details = json_decode($response, true);
-//        echo '<b>Start of details</b><br>';
-//        var_dump($details);
-//        echo '<br><b>End of details</b><br>';
-//        echo $response->body;
-//        echo '<br>';
-//        return;
-        return $details;
+        $details = json_decode($responseBody, true);
+        if ($details === null && json_last_error() !== JSON_ERROR_NONE) {
+            $this->messages[] = 'JSON decode error: ' . json_last_error_msg();
+        }
+        if (JDEBUG) {
+            echo '<b>Start of details</b><br>';
+            var_dump($details);
+            echo '<br><b>End of details</b><br>';
+            echo $responseBody;
+            echo '<br>========<br>';
+ //           return;
+            return $details;
+        }
+    }
+
+    public function createLog ($record_type,$ref, $message){
+        $db = $this->getDbo();
+        $query = $db->getQuery(true);
+        $query->insert($db->quoteName('#__ra_logfile'))
+            ->set('sub_system = ' . $db->quote('RA Events'))
+            ->set('record_type = ' . $db->quote($record_type))
+            ->set('ref = ' . $db->quote($ref))
+            ->set('message = ' . $db->quote($message));
+        $db->setQuery($query)->execute();
+//        $this->toolsHelper->createLog('RA Events', $record_type, $ref, $message);
     }
 
     public function lookupContact($contact) {

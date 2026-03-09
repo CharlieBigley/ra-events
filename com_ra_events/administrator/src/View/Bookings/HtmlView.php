@@ -109,7 +109,7 @@ class HtmlView extends BaseHtmlView {
             }
 
             if (isset($this->items[0]->state)) {
-                $childBar->trash('bookings.trash')->text('Delete')->listCheck(true);
+                $childBar->trash('bookings.trash')->text('Cancel')->listCheck(true);
             }
         }
         // Show trash and delete for components that uses the state field
@@ -117,7 +117,7 @@ class HtmlView extends BaseHtmlView {
 
             if ($this->state->get('filter.state') == ContentComponent::CONDITION_TRASHED && $canDo->get('core.delete')) {
                 $toolbar->delete('bookings.delete')
-                        ->text('JTOOLBAR_EMPTY_TRASH')
+                        ->text('Delete')
                         ->message('JGLOBAL_CONFIRM_DELETE')
                         ->listCheck(true);
             }

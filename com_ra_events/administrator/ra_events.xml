@@ -9,13 +9,13 @@
 <extension type="component" version="4.0" method="upgrade">
     <name>RA Events</name>
     <element>com_ra_events</element>
-    <creationDate>27 Feb 2026</creationDate>
+    <creationDate>09 Mar 2026</creationDate>
     <copyright>Copyright (C) 2022. All rights reserved.</copyright>
     <license>GNU General Public License version 2 or later; see LICENSE.txt</license>
     <author>Charlie Bigley</author>
     <authorEmail>webmaster@bigley.me.uk</authorEmail>
     <authorUrl>https://docs.stokeandnewcastleramblers.org.uk</authorUrl>
-    <version>2.4.12</version>
+    <version>2.4.13</version>
     <description>Support for Events and Bookings</description>
     <namespace path="src">Ramblers\Component\Ra_events</namespace>   
     <scriptfile>script.php</scriptfile>	

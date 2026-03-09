@@ -1,7 +1,7 @@
 <?php
 
 /**
- * @version    2.4.2
+ * @version    2.4.13
  * @component  com_ra_events
  * @author     Charlie Bigley <webmaster@bigley.me.uk>
  * @copyright  2023 Charlie Bigley
@@ -13,6 +13,7 @@
  * 03/10/25 CB of creating a booking from email, log created_by as user from booking
  * 14/11/25 CB set special_request & confirmed as Null
  * 26/11/25 CB reset partner name if only one place
+ * 02/03/26 CB don't set created, let database do it
  */
 
 namespace Ramblers\Component\Ra_events\Administrator\Table;
@@ -57,17 +58,6 @@ class BookingsTable extends Table implements VersionableTableInterface, Taggable
     }
 
     /**
-     * Get the type alias for the history table
-     *
-     * @return  string  The alias as described above
-     *
-     * @since   1.0.1
-     */
-    public function getTypeAlias() {
-        return $this->typeAlias;
-    }
-
-    /**
      * Overloaded bind function to pre-process the params.
      *
      * @param   array  $array   Named array
@@ -84,17 +74,19 @@ class BookingsTable extends Table implements VersionableTableInterface, Taggable
 //        echo 'bind: event_type_id ' . $this->event_type_id . '/' . $array['event_type_id'] . '<br>';
 //        echo 'bind: url ' . $this->url . '/' . $array['url'] . '<br>';
 //        die('bind' . var_dump($array));
-//        $date = Factory::getDate();
         $task = Factory::getApplication()->input->get('task');
         $user = Factory::getApplication()->getIdentity();
+        $date = Factory::getDate('now', Factory::getConfig()->get('offset'))->toSql(true);
+        
         if ($array['num_places'] == 1) {
             $this->partner = '';
             $array['partner'] = '';
         }
-//        if ($this->partner !== '') {
-//            $this->num_places = 2;
-//        }
         // Support for fields that must be null
+       if ($array['created'] == '') {
+            $array['created'] = $date;
+            $this->created = $date;
+        }
         if ($array['special_requests'] == '') {
             $array['special_requests'] = NULL;
             $this->special_requests = NULL;
@@ -166,6 +158,31 @@ class BookingsTable extends Table implements VersionableTableInterface, Taggable
         return parent::check();
     }
 
+    /**
+     * Get the type alias for the history table
+     *
+     * @return  string  The alias as described above
+     *
+     * @since   1.0.1
+     */
+    public function getTypeAlias() {
+        return $this->typeAlias;
+    }
+
+    protected function lookupBooking($event_id, $user_id) {
+ //       die('lookupBooking: event_id ' . $event_id . ' user_id ' . $user_id);
+
+        $sql = 'SELECT id FROM #__ra_bookings WHERE event_id=' . (int) $event_id . ' AND user_id=' . (int) $user_id;
+ //       die($sql);
+        $db = $this->getDbo();
+        $query = $db->getQuery(true);
+        $query->select('id')
+                ->from('#__ra_bookings')
+                ->where('event_id=' . (int) $event_id)
+                ->where('user_id=' . (int) $user_id);
+        return $db->setQuery($query)->loadResult();
+    }
+
     protected function prepareTable($table) {
 
     }
@@ -183,18 +200,11 @@ class BookingsTable extends Table implements VersionableTableInterface, Taggable
      * @since   1.0.1
      */
     public function store($updateNulls = true) {
-
+//        Factory::getApplication()->enqueueMessage('Storing booking, id=' . $this->id    , 'error');  
         $user = Factory::getApplication()->getSession()->get('user');
         $date = Factory::getDate('now', Factory::getConfig()->get('offset'))->toSql(true);
-        if ($this->id == 0) {
-            $this->created = $date;
-            if ($user->id == 0) {
-                // Being created for an email link (no user logged in)
-                $this->created_by = $this->user_id;
-            } else {
-                $this->created_by = $user->id;
-            }
-        } else {
+       
+        if ($this->id != 0) {
             if (($this->state == 1) AND ($this->confirmed_by == 0)) {
                 $this->confirmed = $date;
                 $this->confirmed_by = $user->id;
@@ -202,12 +212,23 @@ class BookingsTable extends Table implements VersionableTableInterface, Taggable
                 $this->cancelled = $date;
                 $this->cancelled_by = $user->id;
             }
+        } else {
+            if ($user->id == 0) {
+                // Being created for an email link (no user logged in)
+                $this->created_by = $this->user_id;
+            } else {
+                $this->created_by = $user->id;
+            }
         }
-//        echo 'id ' . $this->id . '<br>';
-//        echo 'Created ' . $this->created . '<br>';
-//        echo 'Created by ' . $this->created_by . '<br>';
+        echo 'id ' . $this->id . '<br>';
+        if ($this->created == '') {
+            $message= 'store: created is empty string, setting to ' . $date . '<br>';
+            Factory::getApplication()->enqueueMessage($message, 'info');
+            $this->created = $date;
+        }
+        echo 'created_by ' . $this->created_by . '<br>';
 //
-//        echo 'Event_id ' . $this->event_id . '<br>';
+        echo 'Event_id ' . $this->event_id . '<br>';
 //        echo 'User_id ' . $this->user_id . '<br>';
 //        echo 'custom1 ' . $this->custom1 . '<br>';
 //        echo 'custom2 ' . $this->custom2 . '<br>';
@@ -222,8 +243,9 @@ class BookingsTable extends Table implements VersionableTableInterface, Taggable
 //        } elseif ($this->state == -2) {
 //            $message .= 'Cancelled';
 //        }
-//        echo $message;
+        echo $message;
 //        die('Table store');
+//return;
         $response = parent::store($updateNulls);
         if ($response) {
             if (is_null($this->event_id)) {
@@ -243,6 +265,8 @@ class BookingsTable extends Table implements VersionableTableInterface, Taggable
             $sql .= ' WHERE id=' . $this->event_id;
 //            Factory::getApplication()->enqueueMessage($sql, 'info');
             $toolsHelper->executeCommand($sql);
+        } else {
+            Factory::getApplication()->enqueueMessage('Error from parent class storing booking: ' . $this->getError(), 'error');
         }
         return $response;
     }

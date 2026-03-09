@@ -474,9 +474,9 @@ class BookingHelper {
         $contact = $this->toolsHelper->getValue($sql);
 
         $details .= '<b>Organiser</b> ' . $contact;
-        $target_email = 'index.php?option=com_ra_tools&task=system.eventOrganiser&id=' . $item->id;
+ //       $target_email = 'index.php?option=com_ra_tools&task=system.eventOrganiser&id=' . $item->id;
         //$details .= $this->toolsHelper->buildLink($target_email, '<span class="icon-envelope" aria-hidden="true"></span>', false);
-        $details .= $this->toolsHelper->buildLink($target_email, 'Send email<span class="icon-envelope" aria-hidden="true"></span>', false);
+//        $details .= $this->toolsHelper->buildLink($target_email, 'Send email<span class="icon-envelope" aria-hidden="true"></span>', false);
         $details .= '<br>';
 
         $details .= '<b>Created:</b> ' . HTMLHelper::_('date', $item->created, 'd M y') . '<br>';
@@ -488,6 +488,22 @@ class BookingHelper {
         }
         $details .= '</div>';
         $details .= '<br>To make changes, please contact the organiser<br>';
+
+        // If going to include a link, website address must be given from the component parameters
+        $params = ComponentHelper::getParams('com_ra_events');
+        $website = $params->get('website_base', '');
+        if ($website !== '') {
+            $website = ToolsHelper::addSlash($website);  // add a trailing slash if necessary
+            $target_email = $website .'index.php?option=com_ra_tools&task=system.eventOrganiser&id=' . $item->id; 
+            $details .= $this->toolsHelper->buildLink($target_email, 'Send email<span class="icon-envelope" aria-hidden="true"></span>', false); 
+            $details .= '<br>';
+
+            $details .= 'To see the Terms and Conditions, visit the website using the link below<br>';
+            $target =  $website .'index.php?option=com_ra_events&task=event.showTerms';
+            $details .= $this->toolsHelper->buildLink($target, 'View Terms and Conditions', false); 
+            $details .= '<br>';
+            }
+
         return $details;
     }
 
@@ -597,12 +613,12 @@ class BookingHelper {
     // Always sends acknowledgement to the booker
     // If mode =2, also notifies the organiser
 
-        $date = Factory::getDate('now', Factory::getConfig()->get('offset'))->toSql(true);
         $eventHelper = new EventsHelper;
 
-        $sql = 'SELECT b.user_id, b.event_id, e.title, ';
-        $sql .= 'c.name AS `organiser`, p.preferred_name, u.email, ';
-        $sql .= 'e.booking_info, e.max_bookings,e.booking1, e.booking2 ';
+        $sql = 'SELECT b.state, b.user_id, b.event_id, b.created, b.confirmed, b.cancelled, ';
+        $sql .= 'e.title, e.event_date, ';
+        $sql .= 'e.booking_info, e.max_bookings,e.booking1, e.booking2, ';
+        $sql .= 'c.name AS `organiser`, p.preferred_name, u.email ';   
         $sql .= 'FROM #__ra_bookings AS b ';
         $sql .= 'INNER JOIN #__ra_events AS e ON e.id=b.event_id ';
         $sql .= 'INNER JOIN #__contact_details AS c ON c.id=e.contact_id ';
@@ -611,7 +627,8 @@ class BookingHelper {
         $sql .= 'WHERE b.id=' . $booking_id;
         $item = $this->toolsHelper->getItem($sql);
         if (is_null($item)) {
-            return 'Booking not found';
+            Factory::getApplication()->enqueueMessage('Booking not found for id ' . $booking_id, 'error');
+            return false;
         }
 // get name and email of the booker
         $sql = 'SELECT p.preferred_name, u.email ';
@@ -620,60 +637,48 @@ class BookingHelper {
         $sql .= 'WHERE p.id=' . $item->user_id;
         $new_booker = $this->toolsHelper->getItem($sql);
         if (is_null($new_booker)) {
-            return 'Booker not found';
+            Factory::getApplication()->enqueueMessage('Booker not found for id ' . $item->user_id, 'error');
+            return false;
         }   
 //       var_dump($new_booker);
 //       die;
-        $title = 'Booking acknowledgement for ' . $item->title;
+        $title = 'Your booking for ' . $item->title;
 
         $body = $eventHelper->emailHeader($item->event_id, '2');
-        $body .= 'Dear ' . $new_booker->preferred_name . ',<br><br>';
-        $body .= 'This is to acknowledge you made a provisional booking at ' . HTMLHelper::_('date', $date, 'H:i');
-        $body .= ' on ' . HTMLHelper::_('date', $date, 'd M y') . '<br><br>';
-        $body .= '<b>' . $item->title . '</b>.<br><br>';
+        $body .= 'Dear ' . $new_booker->preferred_name . ',<br>';
+        $body .= $this->getBookingDetails($booking_id);
 
-        $body .= '<div style="color: red;">';
-        $body .= '<b>Booking information</b> ' . $item->booking_info. '<br>'; 
-        $body .= '</div>';
-        $body .= 'The organiser will contact you to confirm your booking<br>'; 
-        $body .= 'If you have any questions, please contact the organiser <b>';
-        $body .=  $item->organiser. '</b> <br>'; 
-        // If going to include a link, website address must be given from the component parameters
-        $params = ComponentHelper::getParams('com_ra_events');
-        $website = $params->get('website_base', '');
-        if ($website !== '') {
-            $website = ToolsHelper::addSlash($website);  // add a trailing slash if necessary
-            $target_email = $website .'index.php?option=com_ra_tools&task=system.eventOrganiser&id=' . $item->item_id; 
-            $body .= $this->toolsHelper->buildLink($target_email, 'Send email<span class="icon-envelope" aria-hidden="true"></span>', false); 
-            $body .= '<br>';
-
-            $body .= 'To see the Terms and Conditions, visit the website using the link below<br>';
-            $target =  $website .'index.php?option=com_ra_events&task=event.showTerms';
-            $body .= $this->toolsHelper->buildLink($target, 'View Terms and Conditions', false); 
-            $body .= '<br>';
-            }
-// send the email
+        // send the email
         $this->toolsHelper->sendEmail($new_booker->email, $item->email, $title, $body);
 
         if ($mode == 1) {
-            return; // Only send acknowledgement to booker
+            return true; // Only send acknowledgement to booker
         }
-//=============================================================================        
+//=============================================================================    
          // Send a message to the event organiser
-        $title = 'New booking for ' . $item->title;
+       
 
         $body = $eventHelper->emailHeader($item->event_id, '3');
         $body .= 'Dear ' . $item->organiser . ',<br><br>';
-        $body .= 'This is to notify you that there has been a new booking for your event ';
+         if ($item->state == 0) {
+            $title = 'New booking for ' . $item->title;
+            $body .= 'This is to notify you that there has been a new booking for your event ';
+        } else {
+            $title = 'Updated booking for ' . $item->title;
+            $body .= 'This is to notify you that a booking has been updated for your event ';
+        }   
         $body .= '<b>' . $item->title . '</b>.<br><br>';
-
+/*
+. HTMLHelper::_('date', $item->created, 'H:i');
+        $body .= ' on ' . HTMLHelper::_('date', $item->created, 'd M y') . '<br>';
+*/
         // 08/12/25 should <br> be necessary?
-        $body .= '<br> ' . $new_booker->preferred_name . ' made a booking at ' . HTMLHelper::_('date', $date, 'H:i');
-        $body .= ' on ' . HTMLHelper::_('date', $date, 'd M y') . '<br><br>';
+        $body .= '<br> ' . $new_booker->preferred_name . ' made a booking at ' . HTMLHelper::_('date', $item->created, 'H:i');
+        $body .= ' on ' . HTMLHelper::_('date', $item->created, 'd M y') . '<br><br>';
         $body .= 'The list of bookings is now:<br>';
 //
         $sql = 'SELECT p.preferred_name, s.title, b.state, b.created, ';
-        $sql .= 'b.num_places, b.special_request, b.custom1, b.custom2 ';
+        $sql .= 'b.num_places, b.partner, b.special_request, b.custom1, b.custom2 ';
         $sql .= 'FROM #__ra_profiles AS p ';
         $sql .= 'INNER JOIN #__ra_bookings AS b ON b.user_id=p.id ';
         $sql .= 'INNER JOIN #__ra_event_states AS s ON s.id = b.state ';
@@ -696,7 +701,7 @@ class BookingHelper {
             $body .= '<td>' . $row->preferred_name . '</td>';
             $body .= '<td>' . $row->title . '</td>';
             $body .= '<td>' . $row->num_places . '</td>';
-            $details = $row->special_request;
+            $details = $row->partner . ', ' . $row->special_request;
             if ($item->booking1 !== '') {
                 $details .= ',' . $row->custom1;
             }
@@ -724,6 +729,7 @@ class BookingHelper {
 //        echo 'emailing to ' . $item->email . '<br>';
 //      Log the email
         $user_id = Factory::getApplication()->getIdentity()->id;
+        $date = Factory::getDate('now', Factory::getConfig()->get('offset'))->toSql(true);
         $db = Factory::getDbo();
         $query = $db->getQuery(true);
         $query

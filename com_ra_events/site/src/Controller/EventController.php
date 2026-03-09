@@ -1,7 +1,7 @@
 <?php
 
 /**
- * @version    2.4.7
+ * @version    2.4.13
  * @component  com_ra_events
  * @author     Charlie Bigley <webmaster@bigley.me.uk>
  * @copyright  2023 Charlie Bigley
@@ -13,6 +13,7 @@
  * 03/11/25 CB for custom sort, also sort by name
  * 21/11/25 CB show special requests in CSV
  * 25/02/26 CB showTerms (invoked from link in confirmation email)
+ * 02/03/26 CB use preferred_name in reports, not name
  */
 
 namespace Ramblers\Component\Ra_events\Site\Controller;
@@ -64,8 +65,7 @@ class EventController extends BaseController {
         $sql .= 'WHERE e.id=' . $event_id;
         $event = $this->toolsHelper->getItem($sql);
 
-        echo '<h2>Booking Reports</h2>';
-echo 'mode is ' . $mode . '<br>';
+//echo 'mode is ' . $mode . '<br>';
         $self = 'index.php?option=com_ra_events';
         // $self .= '&Itemid=' . $this->menu_id;
         $self .= '&task=event.bookingReports&id=' . $event_id;
@@ -90,56 +90,57 @@ echo 'mode is ' . $mode . '<br>';
         }
         $rows = $this->toolsHelper->getRows($sql);
         
-        // Build title header
-        $title = '';
+        // Build column headings based on sort order and presence of custom fields
+        $column_headings = '';
         if ($sort == 'name') {
-            $title = 'Name,Group';
+            $column_headings = 'Name,Group';
         } else {
-            $title = 'Group,Name';
+            $column_headings = 'Group,Name';
         }
-        $title .= ', Email, Extra';
+        $column_headings .= ', Email, Extra';
         if ($event->booking1 !== '') {
-            $title .= ', ' . $event->booking1;
+            $column_headings .= ', ' . $event->booking1;
         }
         if ($event->booking2 !== '') {
-            $title .= ', ' . $event->booking2;
+            $column_headings .= ', ' . $event->booking2;
         }
-        
-        // Generate CSV data
-        $csvData = $title . ",Special requests\n";
-        foreach ($rows as $row) {
-            if ($sort == 'name') {
-                $csvData .= $row->name . ', ';
-                $csvData .= $row->group_name . ', ';
-            } else {
-                $csvData .= $row->group_name . ', ';
-                $csvData .= $row->name . ', ';
-            }
-            $csvData .= $row->email . ', ';
-            $csvData .= $row->partner;
-            if ($event->booking1 !== '') {
-                $csvData .= ', ' . $row->custom1;
-            }
-            if ($event->booking2 !== '') {
-                $csvData .= ', ' . $row->custom2;
-            }
-            $csvData .= ', ';
-            if (str_contains($row->special_request, ',')) {
-                $csvData .= '"' . $row->special_request . '"';
-            } else {
-                $csvData .= $row->special_request;
-            }
-            $csvData .= "\n";
-        }
-        
-        // If CSV download requested, output headers and exit
+ 
+ // If CSV download requested, output headers and exit
         if ($mode === 'csv') {
+            // Generate CSV data
+            $csvData = $column_headings . ",Special requests\n";
+            foreach ($rows as $row) {
+                if ($sort == 'name') {
+                    $csvData .= $row->preferred_name . ', ';
+                    $csvData .= $row->group_name . ', ';
+                } else {
+                    $csvData .= $row->group_name . ', ';
+                    $csvData .= $row->preferred_name . ', ';
+                }
+                $csvData .= $row->email . ', ';
+                $csvData .= $row->partner;
+                if ($event->booking1 !== '') {
+                    $csvData .= ', ' . $row->custom1;
+                }
+                if ($event->booking2 !== '') {
+                    $csvData .= ', ' . $row->custom2;
+                }
+                $csvData .= ', ';
+                if (str_contains($row->special_request, ',')) {
+                    $csvData .= '"' . $row->special_request . '"';
+                } else {
+                    $csvData .= $row->special_request;
+                }
+                $csvData .= "\n";
+            }
+
             header('Content-Type: text/csv; charset=utf-8');
             header('Content-Disposition: attachment; filename="bookings_' . date('Y-m-d') . '.csv"');
             echo $csvData;
             exit;
         }
- echo '2 mode is ' . $mode . '<br>';       
+         echo '<h2>Booking Reports</h2>';
+// echo '2 mode is ' . $mode . '<br>';       
         // Display HTML view (preview or alpha mode)
         echo $this->toolsHelper->showPrint($target);
         $label = 'Download as CSV';
@@ -206,7 +207,7 @@ echo 'mode is ' . $mode . '<br>';
         } elseif ($mode == 'alpha') {
             $names = [];
             foreach ($rows as $row) {
-                $names[] = $row->name;
+                $names[] = $row->preferred_name;
                 if ($row->num_places == 2) {
                     $names[] = $row->partner;
                 }

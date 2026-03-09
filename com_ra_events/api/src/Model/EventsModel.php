@@ -177,6 +177,7 @@ class EventsModel extends ListModel {
             ->set('ref = ' . $db->quote('events'))
             ->set('message = ' . $db->quote('Records selected: ' . count($items)));
         $db->setQuery($query)->execute();
+        // $eventHelper->createLog(10, 'events', 'Records selected: ' . count($items)); --- IGNORE ---
 
         $contactNameById = array();
 

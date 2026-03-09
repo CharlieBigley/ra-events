@@ -19,7 +19,8 @@
  * 13/11/25 CB ignore blank special requests
  * 22/02/26 CB ensure user is logged in showBookings, disallow selection of users for past events
  *             resend confirmation email
- */
+ * 02/03/26 CB Commented out call to bookingHelper->createBooking
+*/
 
 namespace Ramblers\Component\Ra_events\Site\Controller;
 
@@ -110,8 +111,9 @@ class BookingController extends FormController {
         if ($item->bookable == 0) {
             throw new \Exception('This event cannot be booked', 403);
         }
-        $booking_id = $this->bookingHelper->createBooking($event_id, $user_id);
-        $this->bookingHelper->confirmBooking($booking_id);
+// Commented out 02/03/26
+//        $booking_id = $this->bookingHelper->createBooking($event_id, $user_id);
+//        $this->bookingHelper->confirmBooking($booking_id);
 
 // redirect to display form
         $target = 'index.php?option=com_ra_events&view=event&id=' . $event_id . '&Itemid=' . $menu_id;
@@ -335,7 +337,11 @@ class BookingController extends FormController {
     public function showBookings() {
         // Check User is logged in
         if ($this->current_user_id == 0) {
-            throw new \Exception('You must be logged in to view bookings', 403);
+            $message = 'You must be logged in to view bookings';
+            Factory::getApplication()->enqueueMessage($message, 'warning');
+             $this->setRedirect('index.php');
+             $this->redirect();
+             return;
         }  
         $event_id = $this->app->input->getInt('event_id', '0');
         $menu_id = $this->app->input->getInt('Itemid', '0');
@@ -432,9 +438,11 @@ class BookingController extends FormController {
                 $target = $target_edit . '&event_id=' . $row->event_id . '&user_id=' . $row->user_id;
                 $target .= '&id=' . $row->id;
                 $actions = $this->toolsHelper->buildButton($target, 'Edit', False, 'sunset');
-                if ($row->state == 1) {
-                    $target = $target_resend . '&event_id=' . $row->event_id . '&menu_id=' . $row->user_id;
-                    $target .= '&id=' . $row->id;
+                $target = $target_resend . '&event_id=' . $row->event_id . '&menu_id=' . $row->user_id;
+                $target .= '&id=' . $row->id;
+                if ($row->state == 0) {
+                    $actions .= $this->toolsHelper->buildButton($target, 'Resend acknowledgement', False, 'lightgreen');
+                }  elseif ($row->state == 1) {
                     $actions .= $this->toolsHelper->buildButton($target, 'Resend confirmation', False, 'sunrise');             
                 }
                  $table->add_item($actions);

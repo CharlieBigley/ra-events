@@ -1,13 +1,14 @@
 <?php
 
 /**
- * @version    2.3.5
+ * @version    2.4.13
  * @component  com_ra_events
  * @author     Charlie Bigley <webmaster@bigley.me.uk>
  * @copyright  2023 Charlie Bigley
  * @license    GNU General Public License version 2 or later; see LICENSE.txt
  * 02/02/24 CB delete unwanted code
  * 23/10/25 CB implement delete
+ * 09/03/26 CB show type of Event when deleting
  */
 
 namespace Ramblers\Component\Ra_events\Administrator\Controller;
@@ -63,12 +64,17 @@ class EventController extends FormController {
         if ($event_id == 0) {
             return;
         }
-        $sql = 'SELECT event_date, title FROM #__ra_events WHERE id=';
-        $event = $this->toolsHelper->getItem($sql . $event_id);
+        $sql = 'SELECT e.state, e.event_date, e.title, t.description ';
+        $sql .= 'FROM #__ra_events AS e ';
+        $sql .= 'LEFT JOIN #__ra_event_types AS t ON t.id = e.event_type_id ';
+        $sql .= 'WHERE e.id=' . $event_id;
+
+        $event = $this->toolsHelper->getItem($sql);
         $display = false;
 
         echo '<h2>Event ' . $event->event_date . '/' . $event->title . '</h2>';
-
+        echo 'Type <b>' . $event->description . '</b><br>';
+        echo 'Status <b>' . $event->state . '</b><br>';
         $sql = 'SELECT COUNT(*) ';
         $sql .= 'FROM  `#__ra_bookings` ';
         $sql .= 'WHERE event_id=' . $event_id;
@@ -95,10 +101,11 @@ class EventController extends FormController {
                 echo '<li>Details of ' . $count_emails . ' emails</li>';
             }
             echo '</ul>';
-            echo 'If you delete this Event, all these associated records will also be irrevocably lost.';
+            echo 'If you delete this Event, all these associated records will also be irrevocably lost.<br>';
         }
 
-
+        $back = 'administrator/index.php?option=com_ra_events&view=events';
+        echo $this->toolsHelper->buildButton($back,'Cancel', False, 'grey');
         $target = 'administrator/index.php?option=com_ra_events&task=event.purge&event_id=' . $event_id;
         echo $this->toolsHelper->buildButton($target, 'Confirm delete', False, 'red');
     }
