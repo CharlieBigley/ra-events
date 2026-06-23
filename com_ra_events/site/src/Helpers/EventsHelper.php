@@ -2,8 +2,8 @@
 
 /**
  * Contains functions used in the back end and the front end
- * @version    2.4.13
- * @package    com_ra_events
+ * @version    2.5.0
+ * @component  com_ra_events
  * @author     Charlie Bigley <webmaster@bigley.me.uk>
  * @copyright  2023 Charlie Bigley
  * @license    GNU General Public License version 2 or later; see LICENSE.txt
@@ -13,11 +13,12 @@
  * 10/09/25 CB delete event_time_end, add num_bookings + max_bookings
  * 15/09/25 CB show Profiles (if MailMan not installed)
  * 18/09/25 CB ensure num_bookings is integer (for Committee meetings it will be blank)
- * 24/09/25 CB correct lookupConrtact
+ * 24/09/25 CB correct lookupContact
  * 08/02/26 CB Don't create new events if status = 0 (unpublished), but update if they exist
  * 25/02/26 CB changes to email header and body for new booking confirmation, show booking_info in red
  * 26/02/26 CB showFirst - show count of fields
  * 09/03/26 CB add function createLog (calls ToolsHelper->createLog)
+ * 06/04/26 CB registerEmails
  */
 
 namespace Ramblers\Component\Ra_events\Site\Helpers;
@@ -30,6 +31,7 @@ use Joomla\CMS\Object\CMSObject;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 use Joomla\CMS\Uri\Uri;
 use Joomla\Database\DatabaseInterface;
+use Ramblers\Component\Ra_events\Site\Helpers\BookingHelper;
 use Ramblers\Component\Ra_tools\Site\Helpers\ToolsHelper;
 use Ramblers\Component\Ra_tools\Site\Helpers\ToolsTable;
 
@@ -49,6 +51,54 @@ class EventsHelper {
         $this->current_user_id = Factory::getApplication()->getSession()->get('user')->id;
         $this->toolsHelper = new ToolsHelper;
         $this->canDo = ContentHelper::getActions('com_ra_events');
+    }
+
+    private function createRecipent($mailshot_id, $user_id) {
+        if ($mailshot_id == 0) {
+            Factory::getApplication()->enqueueMessage('Recipient ' . $user_id . ', mailshot id =0', 'comment');
+            return false;
+        }
+        if ($this->user_id == 0) {
+            Factory::getApplication()->enqueueMessage("User id = 0", 'error');
+            return false;
+        }
+        $db = Factory::getDbo();
+        $jinput = Factory::getApplication()->input;
+        $ip_address = $jinput->server->get('REMOTE_ADDR');
+        $sql = 'SELECT email FROM #__users WHERE id=' . $user_id;
+        $email = $this->toolsHelper->getValue($sql);
+        $columns = array('mailshot_id', 'user_id', 'email', 'ip_address', 'created_by');
+
+        $values = array($db->quote($mailshot_id),
+            $db->quote($user_id),
+            $db->quote($email),
+            $db->quote($ip_address),
+            $db->quote($this->user_id));
+
+        $query = $db->getQuery(true);
+// Prepare the insert query.
+        $query
+                ->insert($db->quoteName('#__ra_mail_recipients'))
+                ->columns($db->quoteName($columns))
+                ->values(implode(',', $values));
+
+// Set the query using our newly populated query object and execute it.
+        $db->setQuery($query);
+        $db->execute();
+        $id = $db->insertid();
+        if ($id == 0) {
+            return 0;
+        }
+        return 1;
+    }
+    function countAttendees($event_id) {
+        // Returns number of active attendees for given event
+        $sql = 'SELECT COUNT(*) ';
+        $sql .= 'FROM  `#__ra_bookings` AS b ';
+        $sql .= 'INNER JOIN #__ra_events AS e ON e.id = b.event_id ';
+        $sql .= 'INNER JOIN #__users AS u ON u.id = b.user_id ';
+        $sql .= 'WHERE (b.state=0 OR b.state=1) AND u.block=0 AND u.requireReset=0 AND e.id=' . $event_id;
+        return $this->toolsHelper->getValue($sql);
     }
 
     public function deleteShared() {
@@ -79,16 +129,15 @@ class EventsHelper {
         echo $this->toolsHelper->backButton($back);
     }
 
-        public function emailHeader($event_id, $record_type) {
+    public function emailHeader($event_id, $record_type) {
         /*
-         * Generates the responsive email header with text left-aligned and logo right-aligned
-         * Uses flexbox for responsive layout that works on all screen sizes
+         * Builds the header fragment for the outgoing HTML email.
+         * ToolsHelper::sendEmail() adds the outer HTML wrapper.
          */
         $logo = '/images/com_ra_events/logo.png';
         $params = ComponentHelper::getParams('com_ra_events');
 
-// Set the div for the header as a whole using flexbox for responsive layout
-// In due course, can just user $header = $this->toolsHelper->buildEmailPreamble();
+// Set the header container using flexbox for responsive layout.
         $header = '<div style="';
         $header .= 'display: flex; ';
         $header .= 'justify-content: space-between; ';
@@ -103,7 +152,7 @@ class EventsHelper {
         $header .= 'overflow: hidden; ';
         $header .= '">';
 
-//      Set the div for the header text (left-aligned, flexible width, shrinks on small screens)
+//      Set the header text block.
         $header .= '<div style="flex: 1 1 auto; text-align: left; min-width: 0; overflow-wrap: break-word;">';
         $header_text = $params->get('email_header', 'Send from RA Events');
         $header_text .= '<br>';
@@ -114,15 +163,17 @@ class EventsHelper {
             $header_text .= 'Details of Booking: ';
         } elseif ($record_type == '3') {
             $header_text .= 'New booking:';
+        } elseif ($record_type == '4') {
+            $header_text .= 'Message to everyone booked onto: ';            
         } else {
-            $header_text .= 'Message to everyone booked onto: ';
+            $header_text .= 'Message of type: ' . $record_type;
         }
         $sql = 'SELECT title FROM #__ra_events WHERE id=' . $event_id;
         $header_text .= $this->toolsHelper->getValue($sql);        
         $header .= $header_text;
         $header .= '</div>';
 
-//      Logo (right-aligned, non-shrinking)
+//      Add the logo block if the file is present.
         if (file_exists(JPATH_ROOT . $logo)) {
             $image_data = file_get_contents(JPATH_ROOT . $logo);
             $encoded = base64_encode($image_data);
@@ -244,6 +295,45 @@ class EventsHelper {
         }
     }
 
+    private function getSubscribers($event_id, $restart = 'N') {
+//        $this->message .= 'getSubscribers mailshot_id=' . $mailshot_id . ', ';
+// returns an array of users currently subscribed to the given list
+        if ($event_id == '') {
+            echo 'Event id is blank<br>';
+            Factory::getApplication()->enqueueMessage('Event id is blank', 'error');
+            return;
+        }
+        $sql = "SELECT DISTINCT b.id AS booking_id, e.id AS eventid, ";
+//      $sql .= "u.name AS 'User', ";          
+        $sql .= "u.id as user_id, u.email AS 'email' ";
+        $sql .= 'FROM #__ra_mail_shots AS m ';
+        $sql .= 'INNER JOIN `#__ra_events` AS e ON e.id = m.event_id ';
+        $sql .= 'INNER JOIN #__ra_bookings AS b ON b.event_id = e.id ';
+        $sql .= 'INNER JOIN #__users AS u ON u.id = b.user_id ';
+        if ($restart == 'N') {
+            $sql .= 'WHERE ';
+        } else {
+            $sql .= 'LEFT JOIN #__ra_mail_recipients AS mr ON mr.mailshot_id =m.id ';
+            $sql .= 'AND u.id = mr.user_id ';
+            $sql .= 'WHERE mr.id IS NULL ';
+            $sql .= 'AND ';
+        }
+        $sql .= 'e.id=' . $event_id;
+
+        $sql .= ' AND (b.state=0 OR b.state=1)';
+        $sql .= ' AND u.block=0 AND u.requireReset=0';
+        $sql .= ' ORDER BY u.email';
+//        echo $sql;
+//        $this->toolsHelper->showSql($sql);
+//        die;
+        $db = Factory::getDbo();
+        $query = $db->getQuery(true);
+        $db->setQuery($sql);
+        $db->execute();
+        $rows = $db->loadObjectList();
+        return $rows;
+    }
+
     public function createLog ($record_type,$ref, $message){
         $db = $this->getDbo();
         $query = $db->getQuery(true);
@@ -334,6 +424,15 @@ class EventsHelper {
         return $contact_id;
     }
 
+    public function lookupEvent($event_id) {
+// Returns the Date/Name of the specified Event
+        $sql = 'SELECT e.event_date, e.title from #__ra_events AS e ';
+        $sql .= 'WHERE e.id=' . $event_id;
+        $event = $this->toolsHelper->getItem($sql);
+        $title = HTMLHelper::_('date', $event->event_date, 'd/m/y') . ' ' . $event->title;
+        return $title;
+    }
+
     public function menusDashboard() {
         $canDo = ContentHelper::getActions('com_ra_events');
         echo '<h3>Events</h3>' . PHP_EOL;
@@ -357,12 +456,147 @@ class EventsHelper {
             echo '<li>(DB version is ' . $versions->db_version . ')</li>';
         }
         echo '</ul>' . PHP_EOL;
-    }
+    } 
+ 
+public function sendEmails($mailshot_id, $force='N') {
+//        Normally invoked in batch mode, but can also be invoked from the back end.
+        $bookingHelper = new BookingHelper; 
+// Find the email address of the event organiser.
+        $sql = 'SELECT ms.body, ms.title, ms.processing_started, ms.date_sent, e.id, u.email ';
+        $sql .= 'FROM #__ra_mail_shots AS ms ';
+        $sql .= 'INNER JOIN `#__ra_events` AS e ON e.id = ms.event_id ';
+        $sql .= 'LEFT JOIN #__contact_details AS c ON c.id = e.contact_id ';
+        $sql .= 'LEFT JOIN #__users AS u ON u.id = c.user_id ';
+        $sql .= 'WHERE ms.id=' . $mailshot_id;
+        $item = $this->toolsHelper->getItem($sql);
+        $reply_to = $item->email;
+        $event_id = $item->id;
+        if (is_null($item->email)) {
+            $message = 'No email address found for the organiser of event id ' . $event_id . '; mailshot cannot be sent';   
+            Factory::getApplication()->enqueueMessage($message, 'error');
+            return false;
+        }
+        if ($force == 'N') {
+// Count the number of attendees.
+            $attendee_count = $this->countAttendees($event_id);
+            echo 'Attendees for event id ' . $event_id . ': ' . $attendee_count . '<br>';
+            $max_online_send = 0; // could get from config $params->get('max_online_send', 100);
 
-    public function sendEmail($to, $reply_to, $subject, $body, $attachments = '') {
-// Adds the component header to the given message
-//        $header = $this->emailHeader();
-        $this->toolsHelper->sendEmail($to, $reply_to, $title, $header . $body);
+            if ($attendee_count > $max_online_send) {
+                $this->updateOutstanding($event_id, $attendee_count);
+                $message = 'Mailshot "' . $item->title . '" has been logged for dispatch and will be processed shortly.';
+                Factory::getApplication()->enqueueMessage($message, 'info');
+                return true;
+            }
+        }
+    // Build the reusable header fragment for this event mailshot.
+        $header = $this->emailHeader($event_id, '4');
+
+
+     // See if the send is only part way through.
+        echo $item->processing_started . ' ' . $item->date_sent . '<br>';
+        if (is_null($item->date_sent)) {
+            echo $item->date_sent . ' date_sent is null<br>';
+        }
+        if ($item->date_sent > '') {
+            $this->messages[] = 'Mailshot "' . $item->title . '" was sent ' . $item->date_sent;
+            $this->updateOutstanding($event_id, 0);
+            return 0;
+        }
+//      Set up maximum time of 10 mins (should be parameter in config).
+        $max = 10 * 60;
+        set_time_limit($max);
+
+        if (is_null($item->processing_started)) {
+            $this->messages[] = 'Sending of Mailshot "' . $item->title . '" started at ' . date('d-M-Y H:i:s A');
+// Save the status that processing has started.
+            if (!$this->updateDate($mailshot_id, 'processing_started')) {
+                $this->message .= ', Unable to update ProcessingDate';
+                return 0;
+            }
+            $restart = false;
+            
+// Store the composed fragment on the mailshot record.
+            $sql = 'UPDATE #__ra_mail_shots ';
+            $sql .= 'SET final_message = ' . $this->db->quote($header . $item->body);
+            $sql .= ' WHERE id=' . $mailshot_id;
+            echo 'sql=' . $sql . '<br>';
+            $this->toolsHelper->executeCommand($sql);   
+
+            $attendees = $this->getSubscribers($event_id);
+            $count_attendees = count($attendees);
+            if ($count_attendees == 0) {
+                $this->messages[] = 'No attendees to send to    ';
+            }
+        } else {
+//          Send had started but not completed.
+            $message = 'Sending of Mailshot "' . $item->title . '" restarting ' . $item->processing_started;
+            $restart = true;
+// Only get users who have not yet received their message.
+            $attendees = $this->getSubscribers($event_id, 'Y');
+            $count_attendees = count($attendees);
+            $message .= ', ' . $count_attendees . ' users outstanding';
+            $this->messages[] = $message;
+        }
+//        die('event_id: ' . $event_id . ' count_attendees:' . $count_attendees   . ' mailshot_id:' . $mailshot_id);
+        $error_count = 0;
+        $count = 0;
+        $outstanding = $count_attendees;
+        $current_email = '';
+
+        echo 'Body: ' . $item->body . '<br>';
+//        foreach ($attendees as $attendee) {
+//            echo 'Attendee: ' . $attendee->email . ', user_id: ' . $attendee->user_id . '<br>';
+////            echo $bookingHelper->lookupBooking($event_id, $attendee->email);
+//            }    
+//        die;
+        foreach ($attendees as $attendee) {
+            $count++;
+            $outstanding--;
+//            if ($restart) {
+//                $this->messages[] = $count . ' ' . $attendee->email;
+//            }
+            // Check not already sent an email to this attendee.
+            if ($attendee->email == $current_email) {
+                $this->messages[] = 'Duplicate message for ' . $attendee->email;
+            } else {
+                $message = $header . $item->body;
+
+                // Add a block with details of the attendee's booking.
+                $message .= $bookingHelper->lookupBooking($event_id, $attendee->email);
+
+                $current_email = $attendee->email;
+//                $token = $this->encode($attendee->subscription_id, 0);
+//                $link = $this->toolsHelper->buildLink($website_base . 'index.php?option=com_ra_mailman&task=mail_lst.processEmail&token=' . $token, 'Un-subscribe');
+//                $message .= $this->footer . $link . '</div>';
+                if (!$this->toolsHelper->sendEmail($attendee->email, $reply_to, $item->title, $message, $this->attachments)) {
+                    $error_count++;
+                }
+
+                if ($outstanding % 10 == 0) {
+                    $this->updateOutstanding($event_id, $outstanding);
+                }
+//                $this->createRecipent($event_id, $attendee->user_id);
+//                if ($count >= $max_emails) {
+//                    break;
+//                }
+            }
+        }
+        if ($error_count > 0) {
+            $this->message .= ' ' . $error_count . ' Errors';
+        }
+        $this->updateOutstanding($event_id, $outstanding);
+        $this->messages[] = ' Mailshot ' . $this->email_title . ' sent to ' . $count . ' users ';
+        if ($outstanding == 0) {
+            if (!$this->updateDate($mailshot_id, 'date_sent')) {
+                $this->messages[] = ', Unable to update DateSent';
+                return false;
+            }
+        } else {
+            $this->messages[] = $outstanding . ' messages still outstanding';
+        }
+        return true;
+
     }
 
     public function showFirst($api_site_id, $events) {
@@ -587,5 +821,18 @@ class EventsHelper {
         $date = Factory::getDate('now', Factory::getConfig()->get('offset'));
         return substr($date->toSql(true), 0, 10);
     }
+
+    private function updateDate($mailshot_id, $field) {
+        $sql = 'UPDATE #__ra_mail_shots SET ' . $field . '=NOW(), ';
+        $sql .= 'state=1 ';
+        $sql .= 'WHERE id=' . (int) $mailshot_id;
+        return $this->toolsHelper->executeCommand($sql);
+    }  
+
+    private function updateOutstanding($event_id, $value) {     
+        $sql = 'UPDATE #__ra_events SET emails_outstanding=' . (int) $value ;
+        $sql .= 'WHERE id=' . (int) $event_id;
+        return $this->toolsHelper->executeCommand($sql);
+    }  
 
 }

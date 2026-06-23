@@ -33,23 +33,20 @@ use Ramblers\Component\Ra_tools\Site\Helpers\ToolsHelper;
 
 //$toolsHelper = new ToolsHelper;
 $bookingHelper = new BookingHelper;
-$objApp = JFactory::getApplication();
+$app = Factory::getApplication();
 $wa = $this->document->getWebAssetManager();
 $wa->registerAndUseStyle('ramblers', 'com_ra_tools/ramblers.css');
 
 // $mode will be blank if invoked from Social Events, or from the first column of List committee Meetings,
 // but will be (A)genda, (R)eports or (M)inutes if invoked from specific columns of the List committee Meetings
-$mode = $objApp->input->getCmd('mode', '');
-$back = 'index.php?option=com_ra_events&view=events' . '&Itemid=' . $this->menu_id;
-if ($this->layout == '') {
-    $back .= '&event_type_id=' . $this->event_type_id;
-} else {
-    $back .= '&layout=' . $this->layout;
+$mode = $app->input->getCmd('mode', '');
+
+if ($this->item->emails_outstanding > 0) {  
+     $app->enqueueMessage('Mailshot waiting to be sent', 'info');
 }
+echo $this->showButtons();
 
-echo '<' . $this->toolsHelper->buildLink($back, 'Back to list of Events');
 $target_email = 'index.php?option=com_ra_tools&task=system.eventOrganiser&id=';
-
 // Lookup the contact for the event
 $sql = 'SELECT c.name FROM `#__ra_events` AS e ';
 $sql .= 'LEFT JOIN #__contact_details AS c ON c.id = e.contact_id ';
@@ -103,7 +100,7 @@ if ($this->event_type_id == 1) {
             } else {
                 echo '<p>' . $this->item->details . '</p>';
             }
-            echo $this->toolsHelper->backButton($back);
+//            echo $this->toolsHelper->backButton($back);
             return;
         case 'R':       // Just showing Reports
             echo '<b>At</b> ' . $this->item->event_time . '<br>';
@@ -114,7 +111,7 @@ if ($this->event_type_id == 1) {
             } else {
                 echo '<p>' . $this->item->reports . '</p>';
             }
-            echo $this->toolsHelper->backButton($back);
+            //echo $this->toolsHelper->backButton($back);
             return;
         case 'M':       // Just showing Minutes
             echo '<b>At</b> ' . $this->item->event_time . '<br>';
@@ -124,7 +121,7 @@ if ($this->event_type_id == 1) {
                 echo '<i>(Not yet available)</i><br>';
             } else {
                 echo '<p>' . $this->item->minutes . '</p>';
-                echo $this->toolsHelper->backButton($back);
+                //echo $this->toolsHelper->backButton($back);
             }
             return;
         default:        // Blank
@@ -158,6 +155,7 @@ if ($this->event_type_id == 1) {
 } else {
     if ($this->item->contact_id > 0) {
         echo '<b>Contact</b> ' . $contact;
+     // echo $this->toolsHelper->buildLink($target_email . $this->item->id, ToolsHelper::envelopeIcon,false);  (after tools 3.5.7)
         echo $this->toolsHelper->buildLink($target_email . $this->item->id, '<span class="icon-envelope" aria-hidden="true"></span>', false);
         echo '<br>';
     }
@@ -213,5 +211,5 @@ if ($this->layout == '') {
 }
 echo $bookingHelper->showBookings($this->item->bookable, $this->item->id, $this->menu_id, $callback);
 echo '</div>';                   // End of Colour div
-echo $this->toolsHelper->backButton($back);
+//echo $this->toolsHelper->backButton($back);
 

@@ -1,6 +1,6 @@
 <?php
 /**
- * @version    2.1.1
+ * @version    2.5.0
  * @component  com_ra_events
  * @author     Charlie Bigley <webmaster@bigley.me.uk>
  * @copyright  2023 Charlie Bigley
@@ -16,6 +16,7 @@
  * 30/03/25 CB show Special
  * 16/06/25 CB If event is from a different site, show details of it in colour
  * 30/06/25 CB showBookingsAdmin
+ * 06/04/26 CB link to force send if there are outstanding emails   
  */
 // No direct access
 defined('_JEXEC') or die;
@@ -45,6 +46,7 @@ $listOrder = $this->state->get('list.ordering');
 $listDirn = $this->state->get('list.direction');
 $canChange = True;
 $saveOrder = $listOrder == 'a.event_date';
+$target_send = 'administrator/index.php?option=com_ra_events&view=event&layout=send&id=';
 ?>
 
 <form action="<?php echo Route::_('index.php?option=com_ra_events&view=events'); ?>" method="post"
@@ -154,6 +156,12 @@ $saveOrder = $listOrder == 'a.event_date';
                                 }
                                 if ($item->publication_to_go > 0) {
                                     $special .= 'P+' . $item->publication_to_go;
+                                }
+                                
+                                if ($item->emails_outstanding > 0){ 
+//                                    $caption = ToolsHelper::envelopeIcon();  // Only after tools 3.5.7
+                                    $caption = '<span class="icon-envelope" aria-hidden="true"></span>';
+                                    $special .= $toolsHelper->buildLink($target_send . $item->id,$caption);  
                                 }
                                 echo '<td>' . $special . '</td>';
 

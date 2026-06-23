@@ -1,7 +1,7 @@
 <?php
 
 /**
- * @version    2.1.7
+ * @version    2.5.0
  * @author     Charlie Bigley <webmaster@bigley.me.uk>
  * @copyright  2023 Charlie Bigley
  * @license    GNU General Public License version 2 or later; see LICENSE.txt
@@ -10,6 +10,7 @@
  * 23/03/25 CB simplify message
  * 30/06/25 CB store $layout;
  * 26/07/25 CB save input parameters in user state
+ * 07/04/26 CB showButton
  */
 
 namespace Ramblers\Component\Ra_events\Site\View\Event;
@@ -21,6 +22,7 @@ use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use \Joomla\CMS\Factory;
 use \Joomla\CMS\Language\Text;
 use \Joomla\CMS\User\CurrentUserInterface;
+use Ramblers\Component\Ra_events\Site\Helpers\BookingHelper;
 use Ramblers\Component\Ra_tools\Site\Helpers\ToolsHelper;
 
 /**
@@ -31,6 +33,7 @@ use Ramblers\Component\Ra_tools\Site\Helpers\ToolsHelper;
 class HtmlView extends BaseHtmlView implements CurrentUserInterface {
 
     protected $attachment_folder;
+    protected $bookingHelper;
     protected $event_type_id;
     protected $event_type;
     protected $state;
@@ -81,6 +84,8 @@ class HtmlView extends BaseHtmlView implements CurrentUserInterface {
         $toolsHelper = new ToolsHelper;
         $sql = 'SELECT description FROM #__ra_event_types WHERE id=' . $this->event_type_id;
         $this->event_type = $toolsHelper->getValue($sql);
+
+        $this->bookingHelper = new BookingHelper;
 
         // Check for errors.
         if (count($errors = $this->get('Errors'))) {
@@ -147,5 +152,65 @@ class HtmlView extends BaseHtmlView implements CurrentUserInterface {
             $this->document->setMetadata('robots', $this->params->get('robots'));
         }
     }
+
+    public function showButtons(){
+    // returns a link to create/edit/send an email
+
+        $back = 'index.php?option=com_ra_events&view=events' . '&Itemid=' . $this->menu_id;
+        if ($this->layout == '') {
+            $back .= '&event_type_id=' . $this->event_type_id;
+        } else {
+            $back .= '&layout=' . $this->layout;
+        }
+        $buttons = $this->toolsHelper->backButton($back, $caption);
+        // get any bookings, confirmed or provisional
+ //       echo 'view: event id=' . $this->item->id . ' - event type id=' . $this->event_type_id . '<br>';
+        $tot_bookings = $this->bookingHelper->countActiveBookings($this->item->id);
+
+        if (($this->item->emails_outstanding == 0) && ($tot_bookings > 1)) {
+            $target = 'index.php?option=com_ra_events&Itemid=' . $this->menu_id . '&';
+            $sql = 'SELECT id, processing_started, date_sent FROM `#__ra_mail_shots` ';
+            $sql .= 'WHERE event_id=' . (INT) $this->item->id;
+            $sql .= ' ORDER BY id DESC LIMIT 2';
+//            echo $sql . '<br>';
+            $mailshot = $this->toolsHelper->getItem($sql);
+            if (is_null($mailshot)) {
+                // No mailshot
+                $caption = 'New message';
+                $colour = 'darkgreen';
+                $target .= 'view=mailshotform';
+            } else {
+                // Mailshot exists
+                if (is_null($mailshot->processing_started)) {
+                // mailshot exists but not yet sent
+                    $caption = 'Edit message';
+                    $colour = 'sunrise';
+                    $target .= 'view=mailshotform&id=' . $mailshot->id;
+                    $target .= '&event_id=' .$this->item->id;
+                    echo $target . '<br>';
+                    $buttons .= $this->toolsHelper->buildButton($target,$caption,false,$colour);
+
+                    $caption = 'Send message';
+                    $colour = 'red';
+                    $target .= 'task=event.registerEmails&mailshot_id=' . $mailshot->id;
+                } else {
+                // Last mailshot was sent successfully
+                    $caption = 'New message';
+                    $colour = 'darkgreen';
+                    $target .= 'view=mailshotform';
+                }
+            }        
+
+            $target .= '&event_id=' .$this->item->id;
+            $buttons .= $this->toolsHelper->buildButton($target,$caption,false,$colour);
+        }
+        if ($tot_bookings > 0) {    
+            $caption = 'Show Reports';
+            $target = 'index.php?option=com_ra_events&Itemid=' . $this->menu_id;
+            $target .= '&task=event.bookingReports&id=' . $this->item->id;
+            $buttons .= $this->toolsHelper->buildButton($target, $caption, False, 'darkgreen');   
+        }     
+        return $buttons;
+}
 
 }

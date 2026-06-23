@@ -17,7 +17,8 @@
  * 11/07/25 CB contactsReport
  * 15/09/25 CB two reports for shared events
  * 16/09/25 CB correct report of shared events
- * 03/11/25 Show unpublished contacts in red
+ * 03/11/25 CB Show unpublished contacts in red
+ * 09/06/26 CB create missing Profiles
  */
 
 namespace Ramblers\Component\Ra_events\Administrator\Controller;
@@ -60,6 +61,377 @@ class ReportsController extends FormController {
 
         $wa = Factory::getApplication()->getDocument()->getWebAssetManager();
         $wa->registerAndUseStyle('ramblers', 'com_ra_tools/ramblers.css');
+    }
+
+    public function bookingSummary() {
+        ToolBarHelper::title('Bookings summary');
+        echo $this->breadcrumbs . '<br>';
+        $sql = 'SELECT a.id,a.event_date,DATEDIFF(a.event_date, CURRENT_DATE) AS days_to_go, ';
+        $sql .= 'a.event_time, a.event_type_id, event_type.description,title, ';
+        $sql .= 'a.num_bookings, a.max_bookings ';
+        $sql .= 'FROM `#__ra_events` AS a ';
+        $sql .= 'LEFT JOIN #__ra_event_types AS event_type ON event_type.id = a.event_type_id ';
+        $sql .= 'LEFT JOIN #__contact_details AS c ON c.id = a.contact_id ';
+        $sql .= 'WHERE a.state=1 AND a.bookable=1 ';
+        $sql .= 'ORDER BY a.event_date DESC';
+//        echo $sql;
+//        return;
+        $rows = $this->toolsHelper->getRows($sql);
+        $objTable = new ToolsTable();
+//
+        $objTable->add_header("Event Date,Days to go,Type,Title,Num bookings,Tot places,Confirmed bookings,Prov bookings,id");
+        $sql_lookup = 'SELECT COUNT(id) as `count`, SUM(num_places) as `places` FROM #__ra_bookings ';
+        $sql_lookup .= 'WHERE event_id=';
+        foreach ($rows as $row) {
+            $date = HTMLHelper::_('date', $row->event_date, 'd M y');
+            if ($row->event_type_id == 4) {
+                $date .= ' - ' . HTMLHelper::_('date', $row->event_date_end, 'd M y');
+            } else {
+                $date .= ' ' . $row->event_time;
+            }
+            $objTable->add_item($date);
+            $objTable->add_item($row->days_to_go);
+            $objTable->add_item($row->description);
+            $objTable->add_item($row->title);
+            $objTable->add_item($row->num_bookings . '/' . $row->max_bookings);
+
+            $stats = $this->toolsHelper->getItem($sql_lookup . $row->id . ' AND state=1');
+            if ($stats->count == 0) {
+                $objTable->add_item('');
+                $objTable->add_item('');
+            } else {
+                $objTable->add_item($stats->count);
+                $objTable->add_item($stats->places);
+            }
+
+            $stats = $this->toolsHelper->getItem($sql_lookup . $row->id . ' AND state=0');
+            if ($stats->count == 0) {
+                $objTable->add_item('');
+            } else {
+                $objTable->add_item($stats->count);
+            }
+
+            $objTable->add_item($row->id);
+            $objTable->generate_line();
+        }
+        $objTable->generate_table();
+        echo $this->toolsHelper->backButton($this->back);
+    }
+
+    public function bookingsByUser() {
+        ToolBarHelper::title('Bookings by User');
+        echo $this->breadcrumbs . '<br>';
+        $objTable = new ToolsTable();
+        $objTable->add_header('Group,Name,Count bookings,Count places, Count mail lists');
+        $sql = 'SELECT b.user_id, p.home_group, p.preferred_name, COUNT( b.id) AS num, ';
+        $sql .= 'SUM(b.num_places) AS tot_places ';
+        $sql .= 'FROM #__ra_profiles AS p INNER JOIN #__ra_bookings AS b ON b.user_id = p.id ';
+        $sql .= 'GROUP BY b.user_id, p.home_group, p.preferred_name ';
+        $sql .= 'ORDER BY p.home_group, p.preferred_name ';
+
+        $rows = $this->toolsHelper->getRows($sql);
+        foreach ($rows as $row) {
+            $objTable->add_item($row->home_group);
+            $objTable->add_item($row->preferred_name);
+            $objTable->add_item($row->num);
+            $objTable->add_item($row->tot_places);
+            $sql = 'SELECT COUNT( s.id) ';
+            $sql .= 'FROM #__ra_mail_subscriptions AS s ';
+            $sql .= 'WHERE s.user_id=' . $row->user_id;
+            $count = $this->toolsHelper->getValue($sql);
+            $objTable->add_item($count);
+            $objTable->generate_line();
+        }
+        $objTable->generate_table();
+        echo $this->toolsHelper->backButton($this->back);
+    }
+
+    private function breadcrumbsExtra($label, $report) {
+        // generates a link to be added to the standard breadcrumbs
+        $target = 'administrator/index.php?option=com_ra_events&task=reports.' . $report;
+        return '>' . $this->toolsHelper->buildLink($target, $label);
+    }
+
+    public function contactsReport() {
+        ToolBarHelper::title('Contact names');
+        echo $this->breadcrumbs . '<br>';
+//      Check and fix Contacts without a profile records
+        $sql = 'SELECT c.user_id, u.name ';
+        $sql .= 'FROM `#__contact_details`AS c ';
+        $sql .= 'LEFT JOIN `#__ra_profiles` AS p ON p.id = c.user_id ';
+        $sql .= 'LEFT JOIN `#__users` AS u ON u.id = c.user_id ';
+        $sql .= 'WHERE u.block =0 ';
+        $sql .= 'AND p.preferred_name IS NULL ';
+        $sql .= 'ORDER BY c.id';
+        $rows = $this->toolsHelper->getRows($sql);
+
+        foreach ($rows as $row) {
+ $this->createProfile($row->user_id,$row->name);
+        }
+        // See if any Events without preferred_name
+        $sql = 'SELECT e.id,e.event_date, e.title, e.contact_id, e.state,u.email, ';
+        $sql .= 'c.published, p.preferred_name ';
+        $sql .= 'FROM #__ra_events AS e ';
+        $sql .= 'LEFT JOIN #__contact_details AS c ON c.id = e.contact_id ';
+        $sql .= 'LEFT JOIN #__ra_profiles AS p ON p.id = c.user_id ';
+        $sql .= 'LEFT JOIN #__users AS u ON u.id = c.user_id ';
+        $sql .= 'WHERE c.id IS NULL ';
+        $sql .= 'OR c.user_id = 0 ';
+        $sql .= 'OR c.published = 0 ';
+        $sql .= 'OR p.preferred_name IS NULL ';
+        $rows = $this->toolsHelper->getRows($sql);
+        if (count($rows) > 0) {
+            echo '<h2>Events with invalid contact </h2>';
+ //           $this->toolsHelper->showQuery($sql);
+        }
+
+//      Show details
+        $sql = 'SELECT c.id, c.name AS `contact`, c.user_id, c.published,';
+        $sql .= 'u.name, p.preferred_name,u.email ';
+        $sql .= 'FROM `#__contact_details`AS c ';
+        $sql .= 'LEFT JOIN `#__ra_profiles` AS p ON p.id = c.user_id ';
+        $sql .= 'LEFT JOIN `#__users` AS u ON u.id = c.user_id ';
+        $sql .= 'WHERE u.block =0 ';
+        $sql .= 'ORDER BY c.id';
+
+        $rows = $this->toolsHelper->getRows($sql);
+        $objTable = new ToolsTable();
+
+        $sql = 'SELECT COUNT(id) FROM #__ra_events WHERE contact_id=';
+        $target_drilldown = 'administrator/index.php?option=com_ra_events&task=reports.showEventsForContact';
+        $objTable->add_header('Contact name, Contact user_id, Real name, Preferred name, Email,Contact id,Events');
+        foreach ($rows as $row) {
+            if ($row->published == 0) {
+                $details = '<div style="color:red">' . $row->contact . ' unpublished</div>';
+            } else {
+                $details = $row->contact;
+            }
+            $objTable->add_item($details);
+            $objTable->add_item($row->user_id);
+            $objTable->add_item($row->name);
+            $objTable->add_item($row->preferred_name);
+            $objTable->add_item($row->email);
+            $objTable->add_item($row->id);
+            $count = $this->toolsHelper->getValue($sql . $row->id);
+            $target = $target_drilldown . '&id=' . $row->id;
+//            $space = array(' ');
+//            $hex = array('%20');
+//            $name = str_replace($space, $hex, $row->preferred_name);
+            $name = str_replace(' ', '', $row->preferred_name);
+            $target .= '&name=' . $name;
+$objTable->add_item($this->toolsHelper->buildLink($target, $count));
+            $objTable->generate_line();
+        }
+
+        $objTable->generate_table();
+        echo count($rows) . ' Contacts<br>';
+
+        echo $this->toolsHelper->backButton($this->back);
+    }
+
+private function createProfile($id,$preferred_name) {
+    $sql = 'INSERT INTO `#__ra_profiles` (`id`, `home_group`,`preferred_name`, `state`) ';
+    $sql .= 'VALUES ("' . $id . '","","' . $preferred_name . '",1);';
+//    echo "$sql<br>";
+    $this->toolsHelper->executeCommand($sql);
+}
+
+public function createProfiles() {
+//      Check and fix Users without a profile records
+        $sql = 'SELECT u.id, u.name ';
+        $sql .= 'FROM `#__users`AS u ';
+        $sql .= 'LEFT JOIN `#__ra_profiles` AS p ON p.id = u.id ';
+        $sql .= 'WHERE u.block =0 ';
+        $sql .= 'AND p.preferred_name IS NULL ';
+        $rows = $this->toolsHelper->getRows($sql);
+//    echo "$sql<br>";
+        foreach ($rows as $row) {
+           $this->createProfile($row->id,$row->name);
+        }
+        echo $this->toolsHelper->rows . ' created<br>';
+        echo $this->toolsHelper->backButton($this->back);
+}
+
+    public function datesToGo() {
+        ToolBarHelper::title('Events by Date intervals');
+        echo $this->breadcrumbs . '<br>';
+        $sql = 'SELECT a.id,a.event_date,DATEDIFF(a.event_date, CURRENT_DATE) AS days_to_go, ';
+        $sql .= 'a.event_time, a.event_type_id, event_type.description,title, ';
+        $sql .= 'a.publication_date,DATEDIFF(a.publication_date, CURRENT_DATE) AS pub_to_go ';
+        $sql .= 'FROM `#__ra_events` AS a ';
+        $sql .= 'LEFT JOIN #__ra_event_types AS event_type ON event_type.id = a.event_type_id ';
+        $sql .= 'LEFT JOIN #__contact_details AS c ON c.id = a.contact_id ';
+        $sql .= 'WHERE a.state = 1 ';
+        $sql .= 'ORDER BY a.event_date DESC';
+
+//        $this->toolsHelper->showSql($sql);
+        $rows = $this->toolsHelper->getRows($sql);
+        $objTable = new ToolsTable();
+//
+        $objTable->add_header("Event Date,Days to go,Type,Title,Publication date,Days to publication,id");
+        foreach ($rows as $row) {
+//            $objTable->add_item($row->api_site_id);
+            $date = HTMLHelper::_('date', $row->event_date, 'd M y');
+            if ($row->event_type_id == 4) {
+                $date .= ' - ' . HTMLHelper::_('date', $row->event_date_end, 'd M y');
+            } else {
+                $date .= ' ' . $row->event_time;
+            }
+            $objTable->add_item($date);
+            $objTable->add_item($row->days_to_go);
+            $objTable->add_item($row->description);
+            $objTable->add_item($row->title);
+            $objTable->add_item($row->publication_date);
+            $objTable->add_item($row->pub_to_go);
+            $objTable->add_item($row->id);
+            $objTable->generate_line();
+        }
+        $objTable->generate_table();
+        echo $this->toolsHelper->backButton($this->back);
+    }
+
+public function missingProfiles() {
+        $sql = 'SELECT u.id, u.name, u.email ';
+        $sql .= 'FROM `#__users`AS U ';
+        $sql .= 'LEFT JOIN `#__ra_profiles` AS p ON p.id = c.user_id ';
+        $sql .= 'WHERE u.block =0 ';
+        $sql .= 'AND p.preferred_name IS NULL ';
+        $sql .= 'ORDER BY c.id';
+        $rows = $this->toolsHelper->sgetRows($sql);
+        if (count($rows) > 0) {
+          echo '<h2>Users without profile records </h2>';
+          $this->toolsHelper->showQuery($sql);
+          echo $this->toolsHelper->rows . '<br>';
+        }
+       $target = 'administrator/index.php?option=com_ra_events&task=reports.createProfiles';
+       $rows = $this->toolsHelper->buildButton($target,'Generate');
+    $this->toolsHelper->backButton($this->back);
+}
+//    public function importedEvents() {
+//        ToolBarHelper::title('Imported Events');
+//        echo $this->breadcrumbs . '<br>';
+//        $sql = 'UPDATE `#__ra_events`SET api_site_id = NULL WHERE api_site_id =0';
+//        $this->toolsHelper->executeCommand($sql);
+//        $sql = 'SELECT e.id, e.event_date AS `Date`,e.title,e.group_code,e.share_date, e.api_site_id, ';
+//        $sql .= 'e.original_id, c.name, u.email, t.description ';
+//        $sql .= 'FROM `#__ra_events` AS e ';
+//        $sql .= 'INNER JOIN #__ra_event_types as t ON t.id = e.event_type_id ';
+//        $sql .= 'LEFT JOIN #__contact_details AS c ON c.id = e.contact_id ';
+//        $sql .= 'LEFT JOIN #__users AS u ON u.id = c.user_id ';
+//        $sql .= 'WHERE e.api_site_id IS NOT NULL ';
+//        $sql .= 'ORDER BY e.api_site_id, original_id';
+//
+////        $this->toolsHelper->showSql($sql);
+//        $rows = $this->toolsHelper->getRows($sql);
+//        $objTable = new ToolsTable();
+//
+//        $objTable->add_header("Site,Original id,Event date,Type,Title,Share date,Contact,Group,id");
+//        foreach ($rows as $row) {
+//            $objTable->add_item($row->api_site_id);
+//            $objTable->add_item($row->original_id);
+//            $objTable->add_item($row->Date);
+//            $objTable->add_item($row->description);
+//            $objTable->add_item($row->title);
+//            $objTable->add_item($row->share_date);
+//            $objTable->add_item($row->name);
+//            $objTable->add_item($row->group_code);
+//            $objTable->add_item($row->id);
+//            $objTable->generate_line();
+//        }
+//
+//        $objTable->generate_table();
+//        echo count($rows) . ' imported Events<br>';
+//        echo $this->toolsHelper->backButton($this->back);
+//    }
+
+    public function provisionalBookings() {
+        ToolBarHelper::title('Provisional Bookings');
+        echo $this->breadcrumbs . '<br>';
+        $target_edit = 'administrator/index.php?option=com_ra_events&task=booking.edit';
+        $target_edit .= '&callback=provisionals&id=';
+        $sql = 'SELECT e.event_date, e.event_date_end, e.title, e.group_code, ';
+        $sql .= 'DATEDIFF(e.event_date, CURRENT_DATE) AS days_to_go, ';
+        $sql .= 'e.event_time, e.event_type_id, c.name as `contact`, ';
+        $sql .= 'p.preferred_name, t.description as event_type, ';
+        $sql .= 'b.id, b.num_places, b.partner, member.preferred_name as `member` ';
+        $sql .= 'FROM `#__ra_events` AS e ';
+        $sql .= 'INNER JOIN #__ra_bookings AS `b` ON `b`.event_id = e.id ';
+        $sql .= 'LEFT JOIN #__ra_event_types AS `t` ON `t`.id = e.`event_type_id` ';
+        $sql .= 'LEFT JOIN #__contact_details AS `c` ON `c`.id = e.`contact_id` ';
+        $sql .= 'LEFT JOIN #__ra_profiles AS `p` ON `p`.id = c.user_id ';
+        $sql .= 'LEFT JOIN #__ra_profiles AS `member` ON `member`.id = b.user_id ';
+        $sql .= 'WHERE b.state=0 ';
+        $sql .= 'ORDER BY e.event_date ';
+//        echo $sql . '<br>';
+        $rows = $this->toolsHelper->getRows($sql);
+        $objTable = new ToolsTable;
+$objTable->add_header('Date,Type,Title,Contact,Places,Participants,Booking');
+        foreach ($rows as $row) {
+            $date = HTMLHelper::_('date', $row->event_date, 'd M y');
+            if ($row->event_type_id == 4) {
+                $date .= ' - ' . HTMLHelper::_('date', $row->event_date_end, 'd M y');
+            } else {
+                $date .= ' ' . $row->event_time;
+            }
+            $objTable->add_item($date);
+
+            $objTable->add_item($row->event_type);
+            $objTable->add_item($row->title);
+            if (is_null($row->preferred_name)) {
+                $contact = $row->contact;
+            } else {
+                $contact = $row->preferred_name;
+            }
+            $objTable->add_item($contact);
+            $objTable->add_item($row->num_places);
+
+            if (is_null($row->partner)) {
+                $objTable->add_item($row->member);
+            } else {
+                $bookings = $row->member;
+                if ($row->partner !== '') {
+                    $bookings .= '/' . $row->partner;
+                }
+                $objTable->add_item($bookings);
+            }
+            $link = $this->toolsHelper->buildLink($target_edit . $row->id, 'Edit');
+            $objTable->add_item($link);
+            if ($row->days_to_go < 0) {
+                $objTable->generate_line('red');
+            } else {
+                $objTable->generate_line();
+            }
+        }
+        $objTable->generate_table();
+        $target = "administrator/index.php?option=com_ra_events&task=reports.showEventsByMonth";
+        echo $this->toolsHelper->backButton($target);
+    }
+
+    private function setScopeCriteria() {
+        switch ($this->scope) {
+            case ($this->scope == 'D');
+                $this->query->where('state<>1');
+                break;
+            case ($this->scope == 'F');
+                $this->query->where('state=1');
+                $this->query->where('datediff(walk_date, CURRENT_DATE) >= 0');
+                break;
+            case ($this->scope == 'H');
+                $this->query->where('state=1');
+                $this->query->where('datediff(walk_date, CURRENT_DATE) < 0');
+        }
+    }
+
+    private function setSelectionCriteria($mode, $opt) {
+        if ($mode == 'G') {
+            $this->query->where("groups.code='" . $opt . "'");
+        } else {
+            if ($opt == 'NAT') {
+
+            } else {
+$this->query->where("SUBSTR(groups.code,1,2)='" . $opt . "'");
+            }
+        }
     }
 
     public function sharedEvents() {
@@ -181,18 +553,6 @@ class ReportsController extends FormController {
         echo $this->toolsHelper->backButton($this->back);
     }
 
-    public function showEventsByMonth() {
-//        ToolBarHelper::title('Events by month');
-        echo $this->breadcrumbs . '<br>';
-        $field = 'event_date';
-        $table = ' #__ra_events';
-        $criteria = '';
-        $title = 'Events by month';
-        $link = 'administrator/index.php?option=com_ra_events&task=reports.showEventsForMonth';
-        $back = $this->back;
-        $this->toolsHelper->showMonthMatrix($field, $table, $criteria, $title, $link, $back);
-    }
-
     public function showEventsByGroup() {
         ToolBarHelper::title('Events by Group');
         echo $this->breadcrumbs . '<br>';
@@ -218,8 +578,8 @@ class ReportsController extends FormController {
           // URI cannot handle commas as part of the parameters
           //$param = str_replace(',', '%5C%2C%20', $row->GroupCode);
           $param = str_replace(',', '_', $row->GroupCode);
-          $objTable->add_item($this->toolsHelper->buildLink($target . $param, $row->GroupCode));
-          //$objTable->add_item($this->toolsHelper->buildLink($target . $row->GroupCode, $row->GroupCode));
+$objTable->add_item($this->toolsHelper->buildLink($target . $param, $row->GroupCode));
+//$objTable->add_item($this->toolsHelper->buildLink($target . $row->GroupCode, $row->GroupCode));
           }
           $objTable->add_item($row->name);
           $objTable->add_item($row->Number);
@@ -232,6 +592,18 @@ class ReportsController extends FormController {
          */
         echo $this->toolsHelper->backButton($this->back);
 //        echo "<p>";
+    }
+
+    public function showEventsByMonth() {
+//        ToolBarHelper::title('Events by month');
+        echo $this->breadcrumbs . '<br>';
+        $field = 'event_date';
+        $table = ' #__ra_events';
+        $criteria = '';
+        $title = 'Events by month';
+        $link = 'administrator/index.php?option=com_ra_events&task=reports.showEventsForMonth';
+        $back = $this->back;
+        $this->toolsHelper->showMonthMatrix($field, $table, $criteria, $title, $link, $back);
     }
 
     public function showEventsByType() {
@@ -266,329 +638,6 @@ class ReportsController extends FormController {
 //        echo "<p>";
     }
 
-    public function bookingSummary() {
-        ToolBarHelper::title('Bookings summary');
-        echo $this->breadcrumbs . '<br>';
-        $sql = 'SELECT a.id,a.event_date,DATEDIFF(a.event_date, CURRENT_DATE) AS days_to_go, ';
-        $sql .= 'a.event_time, a.event_type_id, event_type.description,title, ';
-        $sql .= 'a.num_bookings, a.max_bookings ';
-        $sql .= 'FROM `#__ra_events` AS a ';
-        $sql .= 'LEFT JOIN #__ra_event_types AS event_type ON event_type.id = a.event_type_id ';
-        $sql .= 'LEFT JOIN #__contact_details AS c ON c.id = a.contact_id ';
-        $sql .= 'WHERE a.state=1 AND a.bookable=1 ';
-        $sql .= 'ORDER BY a.event_date DESC';
-//        echo $sql;
-//        return;
-        $rows = $this->toolsHelper->getRows($sql);
-        $objTable = new ToolsTable();
-//
-        $objTable->add_header("Event Date,Days to go,Type,Title,Num bookings,Tot places,Confirmed bookings,Prov bookings,id");
-        $sql_lookup = 'SELECT COUNT(id) as `count`, SUM(num_places) as `places` FROM #__ra_bookings ';
-        $sql_lookup .= 'WHERE event_id=';
-        foreach ($rows as $row) {
-            $date = HTMLHelper::_('date', $row->event_date, 'd M y');
-            if ($row->event_type_id == 4) {
-                $date .= ' - ' . HTMLHelper::_('date', $row->event_date_end, 'd M y');
-            } else {
-                $date .= ' ' . $row->event_time;
-            }
-            $objTable->add_item($date);
-            $objTable->add_item($row->days_to_go);
-            $objTable->add_item($row->description);
-            $objTable->add_item($row->title);
-            $objTable->add_item($row->num_bookings . '/' . $row->max_bookings);
-
-            $stats = $this->toolsHelper->getItem($sql_lookup . $row->id . ' AND state=1');
-            if ($stats->count == 0) {
-                $objTable->add_item('');
-                $objTable->add_item('');
-            } else {
-                $objTable->add_item($stats->count);
-                $objTable->add_item($stats->places);
-            }
-
-            $stats = $this->toolsHelper->getItem($sql_lookup . $row->id . ' AND state=0');
-            if ($stats->count == 0) {
-                $objTable->add_item('');
-            } else {
-                $objTable->add_item($stats->count);
-            }
-
-            $objTable->add_item($row->id);
-            $objTable->generate_line();
-        }
-        $objTable->generate_table();
-        echo $this->toolsHelper->backButton($this->back);
-    }
-
-    public function bookingsByUser() {
-        ToolBarHelper::title('Bookings by User');
-        echo $this->breadcrumbs . '<br>';
-        $objTable = new ToolsTable();
-        $objTable->add_header('Group,Name,Count bookings,Count places, Count mail lists');
-        $sql = 'SELECT b.user_id, p.home_group, p.preferred_name, COUNT( b.id) AS num, ';
-        $sql .= 'SUM(b.num_places) AS tot_places ';
-        $sql .= 'FROM #__ra_profiles AS p INNER JOIN #__ra_bookings AS b ON b.user_id = p.id ';
-        $sql .= 'GROUP BY b.user_id, p.home_group, p.preferred_name ';
-        $sql .= 'ORDER BY p.home_group, p.preferred_name ';
-
-        $rows = $this->toolsHelper->getRows($sql);
-        foreach ($rows as $row) {
-            $objTable->add_item($row->home_group);
-            $objTable->add_item($row->preferred_name);
-            $objTable->add_item($row->num);
-            $objTable->add_item($row->tot_places);
-            $sql = 'SELECT COUNT( s.id) ';
-            $sql .= 'FROM #__ra_mail_subscriptions AS s ';
-            $sql .= 'WHERE s.user_id=' . $row->user_id;
-            $count = $this->toolsHelper->getValue($sql);
-            $objTable->add_item($count);
-            $objTable->generate_line();
-        }
-        $objTable->generate_table();
-        echo $this->toolsHelper->backButton($this->back);
-    }
-
-    private function breadcrumbsExtra($label, $report) {
-        // generates a link to be added to the standard breadcrumbs
-        $target = 'administrator/index.php?option=com_ra_events&task=reports.' . $report;
-        return '>' . $this->toolsHelper->buildLink($target, $label);
-    }
-
-    public function contactsReport() {
-        ToolBarHelper::title('Contact names');
-        echo $this->breadcrumbs . '<br>';
-//        $sql = 'UPDATE #__ra_events set contact_id=2 WHERE contact_id=5';
-//        $this->toolsHelper->executeCommand($sql);
-        // See if any Events without preferred_name
-        $sql = 'SELECT e.id,e.event_date, e.title, e.contact_id, e.state,u.email, ';
-        $sql .= 'c.published, p.preferred_name ';
-        $sql .= 'FROM #__ra_events AS e ';
-        $sql .= 'LEFT JOIN #__contact_details AS c ON c.id = e.contact_id ';
-        $sql .= 'LEFT JOIN #__ra_profiles AS p ON p.id = c.user_id ';
-        $sql .= 'LEFT JOIN #__users AS u ON u.id = c.user_id ';
-        $sql .= 'WHERE c.id IS NULL ';
-        $sql .= 'OR c.user_id = 0 ';
-        $sql .= 'OR c.published = 0 ';
-        $sql .= 'OR p.preferred_name IS NULL ';
-        $rows = $this->toolsHelper->getRows($sql);
-        //       echo $sql;
-        //       var_dump($rows);
-        //       return;
-        //       return;
-        if (count($rows) > 0) {
-            echo '<h2>Events with invalid contact </h2>';
-            $this->toolsHelper->showQuery($sql);
-        }
-
-
-        $sql = 'SELECT c.id, c.name AS `contact`, c.user_id, c.published,';
-        $sql .= 'u.name, p.preferred_name,u.email ';
-        $sql .= 'FROM `#__contact_details`AS c ';
-        $sql .= 'LEFT JOIN `#__ra_profiles` AS p ON p.id = c.user_id ';
-        $sql .= 'LEFT JOIN `#__users` AS u ON u.id = c.user_id ';
-        $sql .= 'WHERE u.block =0 ';
-        $sql .= 'ORDER BY c.id';
-
-        $rows = $this->toolsHelper->getRows($sql);
-        $objTable = new ToolsTable();
-
-        $sql = 'SELECT COUNT(id) FROM #__ra_events WHERE contact_id=';
-        $target_drilldown = 'administrator/index.php?option=com_ra_events&task=reports.showEventsForContact';
-        $objTable->add_header('Contact name, Contact user_id, Real name, Preferred name, Email,Contact id,Events');
-        foreach ($rows as $row) {
-            if ($row->published == 0) {
-                $details = '<div style="color:red">' . $row->contact . ' unpublished</div>';
-            } else {
-                $details = $row->contact;
-            }
-            $objTable->add_item($details);
-            $objTable->add_item($row->user_id);
-            $objTable->add_item($row->name);
-            $objTable->add_item($row->preferred_name);
-            $objTable->add_item($row->email);
-            $objTable->add_item($row->id);
-            $count = $this->toolsHelper->getValue($sql . $row->id);
-            $target = $target_drilldown . '&id=' . $row->id;
-//            $space = array(' ');
-//            $hex = array('%20');
-//            $name = str_replace($space, $hex, $row->preferred_name);
-            $name = str_replace(' ', '', $row->preferred_name);
-            $target .= '&name=' . $name;
-            $objTable->add_item($this->toolsHelper->buildLink($target, $count));
-            $objTable->generate_line();
-        }
-
-        $objTable->generate_table();
-        echo count($rows) . ' Contacts<br>';
-        echo $this->toolsHelper->backButton($this->back);
-    }
-
-    public function datesToGo() {
-        ToolBarHelper::title('Events by Date intervals');
-        echo $this->breadcrumbs . '<br>';
-        $sql = 'SELECT a.id,a.event_date,DATEDIFF(a.event_date, CURRENT_DATE) AS days_to_go, ';
-        $sql .= 'a.event_time, a.event_type_id, event_type.description,title, ';
-        $sql .= 'a.publication_date,DATEDIFF(a.publication_date, CURRENT_DATE) AS pub_to_go ';
-        $sql .= 'FROM `#__ra_events` AS a ';
-        $sql .= 'LEFT JOIN #__ra_event_types AS event_type ON event_type.id = a.event_type_id ';
-        $sql .= 'LEFT JOIN #__contact_details AS c ON c.id = a.contact_id ';
-        $sql .= 'WHERE a.state = 1 ';
-        $sql .= 'ORDER BY a.event_date DESC';
-
-//        $this->toolsHelper->showSql($sql);
-        $rows = $this->toolsHelper->getRows($sql);
-        $objTable = new ToolsTable();
-//
-        $objTable->add_header("Event Date,Days to go,Type,Title,Publication date,Days to publication,id");
-        foreach ($rows as $row) {
-//            $objTable->add_item($row->api_site_id);
-            $date = HTMLHelper::_('date', $row->event_date, 'd M y');
-            if ($row->event_type_id == 4) {
-                $date .= ' - ' . HTMLHelper::_('date', $row->event_date_end, 'd M y');
-            } else {
-                $date .= ' ' . $row->event_time;
-            }
-            $objTable->add_item($date);
-            $objTable->add_item($row->days_to_go);
-            $objTable->add_item($row->description);
-            $objTable->add_item($row->title);
-            $objTable->add_item($row->publication_date);
-            $objTable->add_item($row->pub_to_go);
-            $objTable->add_item($row->id);
-            $objTable->generate_line();
-        }
-        $objTable->generate_table();
-        echo $this->toolsHelper->backButton($this->back);
-    }
-
-//    public function importedEvents() {
-//        ToolBarHelper::title('Imported Events');
-//        echo $this->breadcrumbs . '<br>';
-//        $sql = 'UPDATE `#__ra_events`SET api_site_id = NULL WHERE api_site_id =0';
-//        $this->toolsHelper->executeCommand($sql);
-//        $sql = 'SELECT e.id, e.event_date AS `Date`,e.title,e.group_code,e.share_date, e.api_site_id, ';
-//        $sql .= 'e.original_id, c.name, u.email, t.description ';
-//        $sql .= 'FROM `#__ra_events` AS e ';
-//        $sql .= 'INNER JOIN #__ra_event_types as t ON t.id = e.event_type_id ';
-//        $sql .= 'LEFT JOIN #__contact_details AS c ON c.id = e.contact_id ';
-//        $sql .= 'LEFT JOIN #__users AS u ON u.id = c.user_id ';
-//        $sql .= 'WHERE e.api_site_id IS NOT NULL ';
-//        $sql .= 'ORDER BY e.api_site_id, original_id';
-//
-////        $this->toolsHelper->showSql($sql);
-//        $rows = $this->toolsHelper->getRows($sql);
-//        $objTable = new ToolsTable();
-//
-//        $objTable->add_header("Site,Original id,Event date,Type,Title,Share date,Contact,Group,id");
-//        foreach ($rows as $row) {
-//            $objTable->add_item($row->api_site_id);
-//            $objTable->add_item($row->original_id);
-//            $objTable->add_item($row->Date);
-//            $objTable->add_item($row->description);
-//            $objTable->add_item($row->title);
-//            $objTable->add_item($row->share_date);
-//            $objTable->add_item($row->name);
-//            $objTable->add_item($row->group_code);
-//            $objTable->add_item($row->id);
-//            $objTable->generate_line();
-//        }
-//
-//        $objTable->generate_table();
-//        echo count($rows) . ' imported Events<br>';
-//        echo $this->toolsHelper->backButton($this->back);
-//    }
-
-    public function provisionalBookings() {
-        ToolBarHelper::title('Provisional Bookings');
-        echo $this->breadcrumbs . '<br>';
-        $target_edit = 'administrator/index.php?option=com_ra_events&task=booking.edit';
-        $target_edit .= '&callback=provisionals&id=';
-        $sql = 'SELECT e.event_date, e.event_date_end, e.title, e.group_code, ';
-        $sql .= 'DATEDIFF(e.event_date, CURRENT_DATE) AS days_to_go, ';
-        $sql .= 'e.event_time, e.event_type_id, c.name as `contact`, ';
-        $sql .= 'p.preferred_name, t.description as event_type, ';
-        $sql .= 'b.id, b.num_places, b.partner, member.preferred_name as `member` ';
-        $sql .= 'FROM `#__ra_events` AS e ';
-        $sql .= 'INNER JOIN #__ra_bookings AS `b` ON `b`.event_id = e.id ';
-        $sql .= 'LEFT JOIN #__ra_event_types AS `t` ON `t`.id = e.`event_type_id` ';
-        $sql .= 'LEFT JOIN #__contact_details AS `c` ON `c`.id = e.`contact_id` ';
-        $sql .= 'LEFT JOIN #__ra_profiles AS `p` ON `p`.id = c.user_id ';
-        $sql .= 'LEFT JOIN #__ra_profiles AS `member` ON `member`.id = b.user_id ';
-        $sql .= 'WHERE b.state=0 ';
-        $sql .= 'ORDER BY e.event_date ';
-//        echo $sql . '<br>';
-        $rows = $this->toolsHelper->getRows($sql);
-        $objTable = new ToolsTable;
-        $objTable->add_header('Date,Type,Title,Contact,Places,Participants,Booking');
-        foreach ($rows as $row) {
-            $date = HTMLHelper::_('date', $row->event_date, 'd M y');
-            if ($row->event_type_id == 4) {
-                $date .= ' - ' . HTMLHelper::_('date', $row->event_date_end, 'd M y');
-            } else {
-                $date .= ' ' . $row->event_time;
-            }
-            $objTable->add_item($date);
-
-            $objTable->add_item($row->event_type);
-            $objTable->add_item($row->title);
-            if (is_null($row->preferred_name)) {
-                $contact = $row->contact;
-            } else {
-                $contact = $row->preferred_name;
-            }
-            $objTable->add_item($contact);
-            $objTable->add_item($row->num_places);
-
-            if (is_null($row->partner)) {
-                $objTable->add_item($row->member);
-            } else {
-                $bookings = $row->member;
-                if ($row->partner !== '') {
-                    $bookings .= '/' . $row->partner;
-                }
-                $objTable->add_item($bookings);
-            }
-            $link = $this->toolsHelper->buildLink($target_edit . $row->id, 'Edit');
-            $objTable->add_item($link);
-            if ($row->days_to_go < 0) {
-                $objTable->generate_line('red');
-            } else {
-                $objTable->generate_line();
-            }
-        }
-        $objTable->generate_table();
-        $target = "administrator/index.php?option=com_ra_events&task=reports.showEventsByMonth";
-        echo $this->toolsHelper->backButton($target);
-    }
-
-    private function setScopeCriteria() {
-        switch ($this->scope) {
-            case ($this->scope == 'D');
-                $this->query->where('state<>1');
-                break;
-            case ($this->scope == 'F');
-                $this->query->where('state=1');
-                $this->query->where('datediff(walk_date, CURRENT_DATE) >= 0');
-                break;
-            case ($this->scope == 'H');
-                $this->query->where('state=1');
-                $this->query->where('datediff(walk_date, CURRENT_DATE) < 0');
-        }
-    }
-
-    private function setSelectionCriteria($mode, $opt) {
-        if ($mode == 'G') {
-            $this->query->where("groups.code='" . $opt . "'");
-        } else {
-            if ($opt == 'NAT') {
-
-            } else {
-                $this->query->where("SUBSTR(groups.code,1,2)='" . $opt . "'");
-            }
-        }
-    }
-
     public function showEventsForContact() {
         $contact_name = $this->objApp->input->getWord('name', '');
         $contact_id = $this->objApp->input->getInt('id', '0');
@@ -613,7 +662,7 @@ class ReportsController extends FormController {
             echo '<br>No Events found<br>';
         } else {
             $objTable = new ToolsTable;
-            $objTable->add_header('Date,Type,Title,Contact,Group,Bookable,bookings');
+$objTable->add_header('Date,Type,Title,Contact,Group,Bookable,bookings');
             foreach ($rows as $row) {
                 $date = HTMLHelper::_('date', $row->event_date, 'd M y');
                 if ($row->event_type_id == 4) {
@@ -667,7 +716,7 @@ class ReportsController extends FormController {
         //       echo $sql . '<br>';
         $rows = $this->toolsHelper->getRows($sql);
         $objTable = new ToolsTable;
-        $objTable->add_header('Date,Type,Title,Contact,Group,Bookable,bookings');
+$objTable->add_header('Date,Type,Title,Contact,Group,Bookable,bookings');
         foreach ($rows as $row) {
             $date = HTMLHelper::_('date', $row->event_date, 'd M y');
             if ($row->event_type_id == 4) {
@@ -870,7 +919,7 @@ class ReportsController extends FormController {
             } else {
                 $objTable->add_item($row->num_walks);
             }
-            $objTable->add_item(number_format($row->joint_walks));
+$objTable->add_item(number_format($row->joint_walks));
             $objTable->add_item($row->guest_walks);
             $objTable->add_item($row->num_leaders);
             $objTable->add_item($row->total_miles);
@@ -891,3 +940,4 @@ class ReportsController extends FormController {
     }
 
 }
+

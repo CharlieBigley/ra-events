@@ -31,12 +31,13 @@
            filter="user_utc" translateformat="false" showtime="false" format="%Y-%m-%d" timeformat="12"  
            required="true"         
            hint="YYYY-MM-DD"/>
+           <!-- 14/06/26 CB changed filter to raw - stange error where site basic recorded the date as one day previous -->
     <field name="event_date_end" 
            class="inputbox"       
            label="Last Date" 
            description="Last date of the holiday (YYYY-MM-DD)"          
            type="calendar" singleheader="false" todaybutton="false" weeknumbers="false" filltable="true" 
-           filter="user_utc" translateformat="false" showtime="false" format="%Y-%m-%d" timeformat="12"  
+           filter="raw" translateformat="false" showtime="false" format="%Y-%m-%d" timeformat="12"  
            hint="YYYY-MM-DD"/>
     <field name="event_time" 
            default="19:00" 
@@ -51,16 +52,9 @@
            hint="HH:MM"/>
     <field
         name="contact_id"
-        type="sql"
+        type="Contact"
         label="Contact"
-        description="Contact name" 
-        sql_select="c.id, p.preferred_name"      
-        sql_from="`#__contact_details`AS c" 
-        sql_join="#__ra_profiles AS p ON p.id = c.user_id" 
-        sql_where="c.published=1 AND p.preferred_name IS NOT NULL"
-        sql_order="preferred_name" 
-        key_field="id" 
-        value_field="preferred_name"
+        description="Contact name"
     /> 
     <field name="title" size="50" maxlength="50" filter="safehtml" type="text" 
            label="Title" 

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * @version    2.4.7
+ * @version    2.4.15
  * @package    com_ra_events
  * @author     Charlie Bigley <webmaster@bigley.me.uk>
  * @copyright  2023 Charlie Bigley
@@ -20,6 +20,7 @@
  * 22/02/26 CB ensure user is logged in showBookings, disallow selection of users for past events
  *             resend confirmation email
  * 02/03/26 CB Commented out call to bookingHelper->createBooking
+ * 16/06/26 CB correction for showBookings
 */
 
 namespace Ramblers\Component\Ra_events\Site\Controller;
@@ -460,9 +461,7 @@ class BookingController extends FormController {
         $sql .= 'AND b.event_id=' . $event_id;
         $sql .= ' ORDER BY special_request, p.preferred_name';
         $rows = $this->toolsHelper->getRows($sql);
-        if (count($rows) == 0) {
-            echo 'No special requests<br>';
-        } else {
+        if ($rows) {   
             echo '<h4>Special requests</h4>';
             $header = 'Request,Name';
             $table = new ToolsTable;
@@ -474,6 +473,8 @@ class BookingController extends FormController {
                 $table->generate_line();
             }
             $table->generate_table();
+        } else {
+         echo 'No special requests<br>';
         }
         // Show summaries of custom fields
         if ($item->booking1 !== '') {

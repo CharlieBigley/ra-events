@@ -1,7 +1,7 @@
 <?php
 
 /**
- * @version    2.4.2
+ * @version    2.5.0
  * @component  com_ra_events
  * @author     Charlie Bigley <webmaster@bigley.me.uk>
  * @copyright  2023 Charlie Bigley
@@ -11,6 +11,7 @@
  * 19/02/25 CB set up $this->user from getCurrentUser
  * 16/06/25 CB read-only if imported from another site
  * 14/11/25 CB warning if checked out
+ * 06/04/26 CB don't show toolbar for layout send
  */
 
 namespace Ramblers\Component\Ra_events\Administrator\View\Event;
@@ -25,6 +26,7 @@ use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 use \Joomla\CMS\User\CurrentUserInterface;
+use \Ramblers\Component\Ra_tevents\Site\Helpers\EventsHelper;
 use Ramblers\Component\Ra_tools\Site\Helpers\ToolsHelper;
 
 /**
@@ -61,6 +63,8 @@ class HtmlView extends BaseHtmlView implements CurrentUserInterface {
         $this->state = $this->get('State');
         $this->item = $this->get('Item');
         $this->user = $this->getCurrentUser();
+        $app = Factory::getApplication();
+        $layout = $app->input->getWord('layout');
         $this->toolsHelper = new ToolsHelper;
 
         // Set up page introduction for diplay by the Template
@@ -108,7 +112,9 @@ class HtmlView extends BaseHtmlView implements CurrentUserInterface {
             throw new \Exception(implode("\n", $errors));
         }
         $this->show_group = ComponentHelper::getParams('com_ra_events')['show_group'];
-        $this->addToolbar();
+        if ($layout !== 'send') {
+            $this->addToolbar();
+        }  
         parent::display($tpl);
     }
 

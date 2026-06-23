@@ -1,7 +1,7 @@
 <?php
 
 /**
- * @version    2.4.13
+ * @version    2.5.0
  * @component  com_ra_events
  * @author     Charlie Bigley <webmaster@bigley.me.uk>
  * @copyright  2023 Charlie Bigley
@@ -9,6 +9,8 @@
  * 02/02/24 CB delete unwanted code
  * 23/10/25 CB implement delete
  * 09/03/26 CB show type of Event when deleting
+ * 04/04/26 CB add forceSend function to allow immediate sending of mailshot
+ * 08/04/26 CB delete any mailshots associated with an Event when it is deleted
  */
 
 namespace Ramblers\Component\Ra_events\Administrator\Controller;
@@ -19,6 +21,7 @@ use \Joomla\CMS\Factory;
 use Joomla\CMS\Helper\ContentHelper;
 use Joomla\CMS\MVC\Controller\FormController;
 use Joomla\CMS\Router\Route;
+use Ramblers\Component\Ra_events\Site\Helpers\EventsHelper;
 use Ramblers\Component\Ra_tools\Site\Helpers\ToolsHelper;
 
 /**
@@ -30,11 +33,13 @@ class EventController extends FormController {
 
     protected $view_list = 'events';
     protected $toolsHelper;
+    protected $eventsHelper;
 
     public function __construct(array $config = array(), \Joomla\CMS\MVC\Factory\MVCFactoryInterface $factory = null) {
 //        die('Mail_lstController');
         parent::__construct($config, $factory);
         $this->toolsHelper = new ToolsHelper;
+        $this->eventsHelper = new EventsHelper;
         $wa = Factory::getApplication()->getDocument()->getWebAssetManager();
         $wa->registerAndUseStyle('ramblers', 'com_ra_tools/ramblers.css');
     }
@@ -85,11 +90,11 @@ class EventController extends FormController {
         $sql .= 'WHERE ref=' . $event_id;
         $count_emails = $this->toolsHelper->getValue($sql . ' AND state=1');
 
-//        $sql = 'SELECT COUNT(*) ';
-//        $sql .= 'FROM  `#__ra_import_reports` ';
-//        $sql .= 'WHERE list_id=' . $event_id;
-//        $count = $toolsHelper->getValue($sql);
-//        echo '<li>' . $count . ' Import reports.</li>';
+        $sql = 'SELECT COUNT(*) ';
+        $sql .= 'FROM  `#__ra_mail_shots` ';
+        $sql .= 'WHERE list_id=' . $event_id;
+        $count = $this->toolsHelper->getValue($sql);
+        echo '<li>' . $count . ' Mailshots</li>';
 
         if (($count_bookings > 0) OR ($count_emails > 0)) {
             echo 'There are other records present for this event:<br>';
@@ -147,6 +152,22 @@ class EventController extends FormController {
 
         // Redirect to the edit screen.
         $target = 'index.php?option=com_ra_events&view=event&layout=edit&id=' . $editId;
+        $this->setRedirect(Route::_($target, false));
+    }
+
+    public function forceSend(){    
+        $mailshot_id = Factory::getApplication()->input->getInt('id', 0);
+        if ($mailshot_id == 0) {
+            Factory::getApplication()->enqueueMessage('Mailshot ID is required', 'error');
+            return;
+        }
+        $this->eventsHelper->sendEmails($mailshot_id,'Y');
+        foreach ($this->eventsHelper->messages as $message) {
+            Factory::getApplication()->enqueueMessage($message, 'info');    
+   
+        }   
+//          Factory::getApplication()->enqueueMessage('Mailshot ' . $mailshot_id . ' has been sent', 'info');       
+        $target = 'index.php?option=com_ra_events&view=events' ;
         $this->setRedirect(Route::_($target, false));
     }
 

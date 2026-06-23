@@ -2,18 +2,17 @@
 <extension type="module" version="3.0" client="site" method="upgrade">
     <name>RA Events Sidebar</name>
     <author>Charlie Bigley - Staffordshire Ramblers</author>
-    <creationDate>29 Sep 2025</creationDate>
+    <creationDate>17 Jun 2026</creationDate>
     <copyright>Copyleft 2023 Charlie Bigley</copyright>
     <license>This extension in released under the GNU/GPL License</license>
     <authorEmail>webmaster@bigley.me.uk</authorEmail>
     <authorUrl>staffordshireramblers.org.uk</authorUrl>
-    <version>2.0.3</version>
+    <version>2.0.4</version>
     <description>This module enables the display of forthcoming events in a sidebar module</description>
     <namespace>Joomla\Module\Ra_events</namespace>
     <help url="docs.stokeandnewcastleramblers.org.uk" />
     <files>
         <filename module="mod_ra_events">mod_ra_events.php</filename>
-        <filename>index.html</filename>
         <folder>tmpl</folder>
     </files>
     <config>

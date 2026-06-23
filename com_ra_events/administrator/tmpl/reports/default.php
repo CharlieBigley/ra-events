@@ -28,10 +28,8 @@ use Joomla\CMS\Router\Route;
 use Joomla\CMS\Toolbar\Toolbar;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 use Ramblers\Component\Ra_tools\Site\Helpers\ToolsHelper;
-use Ramblers\Component\Ra_tools\Site\Helpers\ToolsTable;
 
 $toolsHelper = new ToolsHelper;
-$objTable = new ToolsTable();
 ToolBarHelper::title('Reports for Events');
 
 // Import CSS
@@ -42,58 +40,31 @@ $back = 'administrator/index.php?option=com_ra_tools&view=dashboard';
 $breadcrumbs = $toolsHelper->buildLink('administrator/index.php', 'Home Dashboard');
 $breadcrumbs .= '>' . $toolsHelper->buildLink($back, 'RA Dashboard');
 echo $breadcrumbs;
+
+$reports = [
+    'Shared Events' => 'administrator/index.php?option=com_ra_events&task=reports.sharedEvents',
+    'Events waiting for publication' => 'administrator/index.php?option=com_ra_events&task=reports.showAwaitingPublication',
+    'Events by Days-to-go' => 'administrator/index.php?option=com_ra_events&task=reports.datesToGo',
+    'Events by Month' => 'administrator/index.php?option=com_ra_events&task=reports.showEventsByMonth',
+    'Events by Type' => 'administrator/index.php?option=com_ra_events&task=reports.showEventsByType',
+    'Events by Group' => 'administrator/index.php?option=com_ra_events&task=reports.showEventsByGroup',
+    'Provisional bookings' => 'administrator/index.php?option=com_ra_events&task=reports.provisionalBookings',
+    'Booking Summary' => 'administrator/index.php?option=com_ra_events&task=reports.bookingSummary',
+    'Bookings by User' => 'administrator/index.php?option=com_ra_events&task=reports.bookingsByUser',
+    'Contacts report' => 'administrator/index.php?option=com_ra_events&task=reports.contactsReport',
+];
 ?>
 
 <form action="<?php echo Route::_('index.php?option=com_ra_events&view=reports'); ?>" method="post" name="reportsForm" id="reportsForm">
     <div id="j-main-container" class="span10">
         <div class="clearfix"> </div>
         <?php
-        //$mode = $this->escape($this->state->get('list.ordering'));
-        //$listDirn = $this->escape($this->state->get('list.direction'));
-        $objTable->width = 30;
-        $objTable->add_header('Report,Action', 'grey');
+        echo '<ul>';
+        foreach ($reports as $caption => $task) {
+            echo '<li>' . $toolsHelper->buildLink($task, $caption) . '</li>';
+        }
+        echo '</ul>';
 
-        $objTable->add_item("Shared Events");
-        $objTable->add_item($toolsHelper->buildButton("administrator/index.php?option=com_ra_events&task=reports.sharedEvents", "Go", False, 'red'));
-        $objTable->generate_line();
-
-        $objTable->add_item("Events waiting for publication");
-        $objTable->add_item($toolsHelper->buildButton("administrator/index.php?option=com_ra_events&task=reports.showAwaitingPublication", "Go", False, 'red'));
-        $objTable->generate_line();
-
-        $objTable->add_item("Events by Days-to-go");
-        $objTable->add_item($toolsHelper->buildButton("administrator/index.php?option=com_ra_events&task=reports.datesToGo", "Go", False, 'red'));
-        $objTable->generate_line();
-
-        $objTable->add_item("Events by Month");
-        $objTable->add_item($toolsHelper->buildButton("administrator/index.php?option=com_ra_events&task=reports.showEventsByMonth", "Go", False, 'red'));
-        $objTable->generate_line();
-
-        $objTable->add_item("Events by Type");
-        $objTable->add_item($toolsHelper->buildButton("administrator/index.php?option=com_ra_events&task=reports.showEventsByType", "Go", False, 'red'));
-        $objTable->generate_line();
-
-        $objTable->add_item("Events by Group");
-        $objTable->add_item($toolsHelper->buildButton("administrator/index.php?option=com_ra_events&task=reports.showEventsByGroup", "Go", False, 'red'));
-        $objTable->generate_line();
-
-        $objTable->add_item("Provisional bookings");
-        $objTable->add_item($toolsHelper->buildButton("administrator/index.php?option=com_ra_events&task=reports.provisionalBookings", "Go", False, 'red'));
-        $objTable->generate_line();
-
-        $objTable->add_item("Booking Summary");
-        $objTable->add_item($toolsHelper->buildButton("administrator/index.php?option=com_ra_events&task=reports.bookingSummary", "Go", False, 'red'));
-        $objTable->generate_line();
-
-        $objTable->add_item("Bookings by User");
-        $objTable->add_item($toolsHelper->buildButton("administrator/index.php?option=com_ra_events&task=reports.bookingsByUser", "Go", False, 'red'));
-        $objTable->generate_line();
-
-        $objTable->add_item("Contacts report");
-        $objTable->add_item($toolsHelper->buildButton("administrator/index.php?option=com_ra_events&task=reports.contactsReport", "Go", False, 'red'));
-        $objTable->generate_line();
-
-        $objTable->generate_table();
         echo $toolsHelper->backButton($back);
         ?>
         <input type="hidden" name="task" value="" />

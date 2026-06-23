@@ -3,18 +3,18 @@
     15/06/25 CB added api (version 2.1.0)
     29/06/25 CB new version of src (API interface)
     01/09/25 CB changed folder name from src to api
-    02/10/25 CB version 2.3.0 - bespoike fields on events/bookings
+    02/10/25 CB version 2.3.0 - bespoke fields on events/bookings
 -->
 <extension type="component" version="4.0" method="upgrade">
     <name>RA Events</name>
     <element>com_ra_events</element>
-    <creationDate>26 Feb 2026</creationDate>
+    <creationDate>18 Jun 2026</creationDate>
     <copyright>Copyright (C) 2022. All rights reserved.</copyright>
     <license>GNU General Public License version 2 or later; see LICENSE.txt</license>
     <author>Charlie Bigley</author>
     <authorEmail>webmaster@bigley.me.uk</authorEmail>
     <authorUrl>https://docs.stokeandnewcastleramblers.org.uk</authorUrl>
-    <version>2.4.8</version>
+    <version>2.5.0</version>
     <description>Support for Events and Bookings</description>
     <namespace path="src">Ramblers\Component\Ra_events</namespace>   
     <scriptfile>script.php</scriptfile>	

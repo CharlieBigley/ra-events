@@ -8,6 +8,8 @@
 # 10/09/25 CB delete event_time_end
 # 02/10/25 CB 2.5.0: extra fields to cutomise bookings
 # 12/02/26 CB delete events/cat_id
+# 30/03/26 CB ra_recipients and ra_mailshots
+# 17/06/25 CB increase length of booking hints 50 -> 100
 #-------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `#__ra_bookings` (
     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -48,6 +50,7 @@ CREATE TABLE IF NOT EXISTS `#__ra_events` (
     `url_description` VARCHAR(255)  NULL  DEFAULT "",
     `attachments` VARCHAR(255)  NULL  DEFAULT "",
     `attachment_description` VARCHAR(255)  NULL  DEFAULT "",
+    `emails_outstanding` INT DEFAULT "0",
     `publication_date`DATETIME NULL , 
     `shareable` INT DEFAULT '0',
     `share_date` DATETIME NULL DEFAULT NULL,
@@ -58,8 +61,8 @@ CREATE TABLE IF NOT EXISTS `#__ra_events` (
     `booking_info` TEXT DEFAULT NULL,
     `booking1` varchar(50) NULL,
     `booking1_hint` varchar(50) NULL ,
-    `booking2` varchar(50) NULL ,
-    `booking2_hint` varchar(50) NULL,
+    `booking2` varchar(100) NULL ,
+    `booking2_hint` varchar(100) NULL,
     `api_site_id` INT NULL,  
     `original_id` INT NULL,  
     `created` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,   
@@ -105,3 +108,38 @@ INSERT INTO `#__ra_event_types` (`description`,`ordering`) VALUES
     ('Training',30),
     ('Holiday/weekend',40);
 #-------------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `#__ra_mail_recipients` (
+	`id` INT NOT NULL AUTO_INCREMENT,
+	`mailshot_id` INT NOT NULL,
+	`user_id` INT NOT NULL,
+	`email` VARCHAR(100) NOT NULL,
+	`created` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        `created_by` INT NULL DEFAULT "0",
+	`ip_address` VARCHAR(50) NOT NULL,
+    PRIMARY KEY (`id`),
+    INDEX idx_user_id(user_id),
+    INDEX idx_mailshot_id(mailshot_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 DEFAULT COLLATE=utf8mb4_unicode_ci;
+# ------------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `#__ra_mail_shots` (
+	`id` INT NOT NULL AUTO_INCREMENT,
+	`record_type` VARCHAR(1) DEFAULT "M" NOT NULL,
+        `mail_list_id` INT NULL,
+        `event_id` INT NULL,
+        `title` VARCHAR(255) NOT NULL,
+        `body` longtext NOT NULL,
+        `final_message` longtext,
+        `attachment` VARCHAR(255) NOT NULL DEFAULT '',
+        `processing_started` DATETIME DEFAULT NULL,
+        `date_sent` DATETIME DEFAULT NULL,
+        `state` TINYINT NOT NULL,
+ 	`created` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,   
+	`created_by` INT NULL DEFAULT "0",
+ 	`modified` DATETIME NULL DEFAULT NULL,
+	`modified_by`INT NULL DEFAULT "0",
+    PRIMARY KEY (`id`),
+    INDEX idx_mail_list_id(mail_list_id),
+    INDEX idx_event_id(event_id),
+    INDEX idx_created_by(created_by)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 DEFAULT COLLATE=utf8mb4_unicode_ci;
+# ------------------------------------------------------------------------------

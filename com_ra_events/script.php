@@ -313,22 +313,6 @@ class Com_Ra_eventsInstallerScript {
             echo '<p>com_ra_events found, version ' . $this->original_version;
             echo ', database version ' . $this->getDbVersion() . '</p>';
         }
-
-        if (ComponentHelper::isEnabled('com_ra_tools', true)) {
-            $tools_required = '3.0.4';
-            $tools_version = $this->getVersion('com_ra_tools');
-            echo '<p>Version ' . $tools_required . ' of com_ra_tools required<br>';
-            if (version_compare($tools_version, $tools_required, 'ge')) {
-                echo '<p>Version ' . $tools_version . ' of com_ra_tools found</p>';
-            } else {
-                echo 'Version ' . $tools_version . ' of com_ra_tools found</p>';
-                echo '<p>ERROR: Please install version of com_ra_tools >=' . $tools_required . '</p>';
-                return false;
-            }
-        } else {
-            echo 'This component cannot be installed unless component RA Tools (com_ra_tools) is installed first';
-            return false;
-        }
         return true;
     }
 
@@ -407,7 +391,7 @@ class Com_Ra_eventsInstallerScript {
             return false;
         }
 
-        $tools_required = '3.4.4';
+        $tools_required = '3.5.7';
         $tools_version = $this->getVersion('com_ra_tools');
         echo 'Version ' . $tools_required . ' of com_ra_tools required';
         if (version_compare($tools_version, $tools_required, 'ge')) {
@@ -418,7 +402,7 @@ class Com_Ra_eventsInstallerScript {
 // If we return false, no message is displayed on the console, just "Custom installation failure"
 //           return false;
         }
-        $this->version_required = '2.4.4';
+        $this->version_required = '2.5.0';
         if (version_compare($this->current_version, $this->version_required, 'ge')) {
             echo 'Current version is ' . $this->current_version . ', no additional processing required</p>';
             return true;
@@ -426,9 +410,17 @@ class Com_Ra_eventsInstallerScript {
             echo '<p>Version is currently ' . $this->current_version . ', ';
             echo 'Requires version >= ' . $this->version_required . '</p>';
         }
+        if (version_compare($this->current_version, '2.5.0', 'le')) {
+            $this->checkColumn('ra_events', 'emails_outstanding', 'A', 'INT DEFAULT "0" AFTER attachment_description; ');
+            $this->checkColumn('ra_events', 'booking1_hint', 'U', 'VARCHAR(100) NULL; ');
+            $this->checkColumn('ra_events', 'booking2_hint', 'U', 'VARCHAR(100) NULL; ');
+            $this->checkColumn('ra_logfile', 'sub_system', 'U', 'VARCHAR(12) NULL; ');
+//           $sql = 'DROP TABLE `#__ra_event_type ';
+//            $this->executeCommand($sql);
+        }
         if (version_compare($this->current_version, '2.4.4', 'le')) {
             $this->checkColumn('ra_emails', 'ref', 'u', 'INT NULL DEFAULT "0";');
-        }    
+        }
         if (version_compare($this->current_version, '2.4.0', 'le')) {
             $this->checkColumn('ra_bookings', 'special_request', 'A', 'varchar(100) NULL AFTER partner ; ');
             $this->checkColumn('ra_emails', 'ref', 'u', 'INT NULL DEFAULT "0";');
@@ -532,6 +524,10 @@ class Com_Ra_eventsInstallerScript {
                 ) DEFAULT COLLATE=utf8mb4_unicode_ci; ';
             $this->checkTable('ra_api_sites', $details);
         }
+//        if (version_compare($this->current_version, '4.5.0', 'le')) {
+//            $this->checkColumn('ra_events', 'booking1_hint', 'U', 'VARCHAR(100); ');
+//            $this->checkColumn('ra_events', 'booking2_hint', 'U', 'VARCHAR(100); ');
+//        }
         return true;
     }
 

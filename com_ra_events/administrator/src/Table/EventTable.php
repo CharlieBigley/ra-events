@@ -418,10 +418,14 @@ class EventTable extends Table implements VersionableTableInterface, TaggableTab
             $this->modified_by = $user->id;
             $this->modified = $date;
         }
-//        if (JDEBUG) {
-//            Factory::getApplication()->enqueueMessage('Storing date ' . $this->event_date, 'info');
-//        }
-        return parent::store($updateNulls);
+        if (JDEBUG) {
+            Factory::getApplication()->enqueueMessage('Storing date ' . $this->event_date_end, 'info');
+        }
+        $response = parent::store($updateNulls);
+        if (JDEBUG) {
+            Factory::getApplication()->enqueueMessage('After Store, date ' . $this->event_date_end, 'info');
+        }
+                return $response;
     }
 
     /**

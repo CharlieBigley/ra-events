@@ -1,6 +1,7 @@
 <?php
 /**
- * @version    2.3.8
+ * @version    2.5.0
+ * @component  com_ra_events
  * @author     Charlie Bigley <webmaster@bigley.me.uk>
  * @copyright  2023 Charlie Bigley
  * @license    GNU General Public License version 2 or later; see LICENSE.txt
@@ -14,6 +15,7 @@
  * 06/08/25 CB pass additional parameter to bookingHelper->showBookings
  * 22/09/25 CB add custom fields
  * 05/11/25 CB don't show link for bookings
+ * 03/04/26 CB new tab to show Mailshots
  */
 // No direct access
 defined('_JEXEC') or die;
@@ -28,6 +30,7 @@ use Ramblers\Component\Ra_events\Site\Helpers\BookingHelper;
 
 $objHelper = new ToolsHelper;
 $bookingHelper = new BookingHelper;
+//$eventsHelper = new EventsHelper;
 
 $wa = $this->document->getWebAssetManager();
 $wa->useScript('keepalive')
@@ -175,10 +178,25 @@ if ($api_site_id > 0) {
             echo '</div>';
             echo '</div>';
             echo HTMLHelper::_('uitab.endTab');
+         if ($this->item->bookable  == '1') {
+            echo HTMLHelper::_('uitab.addTab', 'myTab', 'event5', 'Mailshots');
+            $sql = 'SELECT date_sent, title FROM #__ra_mail_shots WHERE event_id=' . $this->item->id;
+            $mailshots = $objHelper->getRows($sql);
+            if (count($mailshots) == 0) {
+                echo '<p>No mailshots have been sent for this event</p>';
+            } else {
+                echo '<ul>';
+                foreach ($mailshots as $mailshot) {
+                    echo '<li>' . HTMLHelper::_('date', $mailshot->date_sent, Text::_('DATE_FORMAT_LC2')) . ' - ' . $mailshot->title . '</li>';
+                }
+                echo '</ul>';
+            }
+            echo HTMLHelper::_('uitab.endTab');
+         }
         }
     }
     if ($this->item->id > 0) {
-        echo HTMLHelper::_('uitab.addTab', 'myTab', 'event5', 'Publishing');
+        echo HTMLHelper::_('uitab.addTab', 'myTab', 'event6', 'Publishing');
         echo '<div class="row-fluid">';
         echo '<div class="span10 form-horizontal">';
         echo '<fieldset class="adminform">';

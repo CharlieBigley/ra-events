@@ -3,7 +3,7 @@
 /**
  * @module	mod_ra_events sidebar
  * @author	Charlie Bigley
- * version      2.0.3
+ * version      2.0.4
  * @website	https://demo.stokeandnewcastleramblers.org.uk
  * @copyleft	Copyleft 2021 Charlie Bigley webmaster@stokeandnewcastleramblers.org.uk All rights reserved.
  * @license	http://www.gnu.org/licenses/gpl.html GNU/GPL
@@ -15,6 +15,7 @@
  * 30/03/25 CB Don't show events until their publication date
  * 05/07/25 CB use table event_types
  * 29/09/25 CB show date before time
+ * 17/06/26 CB show holiday end date
  */
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Component\ComponentHelper;
@@ -30,7 +31,7 @@ $limit = (int) $params->get('limit');
 //echo "limit= $limit  <br>";
 //echo $display_type;
 $objHelper = new ToolsHelper;
-$sql = 'SELECT a.id, a.event_type_id, event_date, event_time, group_code, a.title ';
+$sql = 'SELECT a.id, a.event_type_id, event_date, event_date_end, event_time, group_code, a.title ';
 $sql .= 'FROM `#__ra_events` AS a ';
 $sql .= 'LEFT JOIN #__ra_event_types AS event_type ON event_type.id = a.event_type_id ';
 $sql .= 'WHERE a.state=1 ';
@@ -50,7 +51,9 @@ $target = 'index.php?option=com_ra_events&view=event&id=';
 $rows = $objHelper->getRows($sql);
 foreach ($rows as $row) {
     echo HTMLHelper::_('date', $row->event_date, 'd-m-y') . ', ';
-    if ($row->event_type_id != 4) {
+    if ($row->event_type_id == 4) {
+        echo HTMLHelper::_('date', $row->event_date_end, 'd-m-y') . ', ';
+    } else {
         echo $row->event_time . ', ';
     }
     echo $objHelper->buildLink($target . $row->id, $row->title) . '<br>';

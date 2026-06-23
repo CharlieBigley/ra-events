@@ -2,7 +2,7 @@
 
 /**
  * Contains functions used in the back end and the front end
- * @version    2.4.7
+ * @version    2.5.0
  * @package    com_ra_events
  * @author     Charlie Bigley <webmaster@bigley.me.uk>
  * @copyright  2023 Charlie Bigley
@@ -20,6 +20,7 @@
  * 06/12/25 CB show special_request on extract & email notification
  * 22/02/26 CB ensure user is logged in showBookings, disallow selection of users for past events
  * 25/02/26 CB changes to confirmation email
+ * 06/04/26 CB move button to the top of the screen
  */
 
 namespace Ramblers\Component\Ra_events\Site\Helpers;
@@ -87,6 +88,16 @@ class BookingHelper {
         $this->toolsHelper->executeCommand($sql);
     }
 
+    public function countActiveBookings($event_id) {
+        // get any bookings, confirmed or provisional
+        $sql = 'SELECT SUM(b.num_places) AS `tot` ';
+        $sql .= 'FROM #__ra_events AS e ';
+        $sql .= 'INNER JOIN #__ra_bookings AS b ON b.event_id = e.id  ';
+        $sql .= 'WHERE e.id=' . (INT) $event_id . ' ';
+        $sql .= 'AND e.state=1 ';
+        return $this->toolsHelper->getValue($sql);
+    }
+
     private function countBookingsSite($event_id) {
 // Invoked from showBookings
 
@@ -94,7 +105,7 @@ class BookingHelper {
         //$sql = 'SELECT SUM(b.num_places) AS num ';
         $sql = 'SELECT COUNT(b.id) AS num ';
         $sql .= 'FROM #__ra_bookings AS b ';
-        $sql .= 'WHERE b.event_id=' . $event_id;
+        $sql .= 'WHERE b.event_id=' . (INT) $event_id;
         $total = $this->toolsHelper->getValue($sql);
         if (is_null($total)) {
 //            echo 'No bookings yet';
@@ -784,12 +795,7 @@ class BookingHelper {
         $is_future_event = ($event_date >= $today);
         
         // get any bookings, confirmed or provisional
-        $sql = 'SELECT SUM(b.num_places) AS `tot` ';
-        $sql .= 'FROM #__ra_events AS e ';
-        $sql .= 'INNER JOIN #__ra_bookings AS b ON b.event_id = e.id  ';
-        $sql .= 'WHERE e.id=' . $event_id . ' ';
-        $sql .= 'AND e.state=1 ';
-        $tot_bookings = $this->toolsHelper->getValue($sql);
+        $tot_bookings = $this->countActiveBookings($event_id);
 // Get any confirmed bookings
         $sql = 'SELECT SUM(b.num_places) AS `tot` ';
         $sql .= 'FROM #__ra_events AS e ';
@@ -872,18 +878,22 @@ class BookingHelper {
                 $select = $target . '&task=booking.selectUsers&event_id=' . $event_id;
                 $details .= '<a>' . $this->toolsHelper->buildButton($select, 'Select Users') . '</a>';
             }
-            if ($tot_bookings > 0) {
-                $label = 'Send email';
-                $link = 'index.php?option=com_ra_tools&Itemid=' . $menu_id;
-                $link .= '&task=system.eventAttendees';
-                $link .= '&id=' . $event_id;
-                $details .= $this->toolsHelper->buildButton($link, $label, True, 'orange');
+//            if ($tot_bookings > 0) {
+//                if ($this->item->emails_outstanding > 0){
+//                    echo 'email button<br>';    
+//                    echo $this->emailButton($this->item->id);
+//                }
+//                $label = 'Send email';
+//                 $link = 'index.php?option=com_ra_events&Itemid=' . $menu_id;
+//                $link .= '&view=mailshotform';
+//                $link .= '&id=0&event_id=' . $event_id;
+//                $details .= $this->toolsHelper->buildButton($link, $label, True, 'orange');
 
-                $label = 'Show Reports';
-                $link = 'index.php?option=com_ra_events&Itemid=' . $menu_id;
-                $link .= '&task=event.bookingReports&id=' . $event_id;
-                $details .= $this->toolsHelper->buildButton($link, $label, False, 'darkgreen');
-            }
+//                $label = 'Show Reports';
+//                $link = 'index.php?option=com_ra_events&Itemid=' . $menu_id;
+//                $link .= '&task=event.bookingReports&id=' . $event_id;
+//                $details .= $this->toolsHelper->buildButton($link, $label, False, 'darkgreen');
+//            }
         }
         $details .= $event->api_site_id;
         $details .= '<br><br>';

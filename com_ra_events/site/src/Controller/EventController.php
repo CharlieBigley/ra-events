@@ -1,7 +1,7 @@
 <?php
 
 /**
- * @version    2.4.13
+ * @version    2.4.15
  * @component  com_ra_events
  * @author     Charlie Bigley <webmaster@bigley.me.uk>
  * @copyright  2023 Charlie Bigley
@@ -14,6 +14,7 @@
  * 21/11/25 CB show special requests in CSV
  * 25/02/26 CB showTerms (invoked from link in confirmation email)
  * 02/03/26 CB use preferred_name in reports, not name
+ * 17/06/26 CB include booked date in the CSV output
  */
 
 namespace Ramblers\Component\Ra_events\Site\Controller;
@@ -57,6 +58,7 @@ class EventController extends BaseController {
         $event_id = $this->app->input->getInt('id', '0');
         $sort = $this->app->input->getCmd('sort', 'name');
         $mode = $this->app->input->getWord('mode', 'preview');
+        $menu_id = $this->app->input->getInt('Itemid', '0');
 
         $sql = 'SELECT e.event_type_id, e.event_date, e.event_date_end, e.title, ';
         $sql .= 't.description AS `event_type`, e.booking1, e.booking2 ';
@@ -67,7 +69,7 @@ class EventController extends BaseController {
 
 //echo 'mode is ' . $mode . '<br>';
         $self = 'index.php?option=com_ra_events';
-        // $self .= '&Itemid=' . $this->menu_id;
+        $self .= '&Itemid=' . $menu_id;
         $self .= '&task=event.bookingReports&id=' . $event_id;
 
         $sql = 'SELECT b.*, ';
@@ -88,8 +90,9 @@ class EventController extends BaseController {
         } else {
             $sql .= ' ORDER BY g.name,p.preferred_name';
         }
+//        echo $sql . '<br>';
         $rows = $this->toolsHelper->getRows($sql);
-        
+
         // Build column headings based on sort order and presence of custom fields
         $column_headings = '';
         if ($sort == 'name') {
@@ -97,15 +100,15 @@ class EventController extends BaseController {
         } else {
             $column_headings = 'Group,Name';
         }
-        $column_headings .= ', Email, Extra';
+        $column_headings .= ',Booked,, Email, Extra';
         if ($event->booking1 !== '') {
             $column_headings .= ', ' . $event->booking1;
         }
         if ($event->booking2 !== '') {
             $column_headings .= ', ' . $event->booking2;
         }
- 
- // If CSV download requested, output headers and exit
+
+        // If CSV download requested, output headers and exit
         if ($mode === 'csv') {
             // Generate CSV data
             $csvData = $column_headings . ",Special requests\n";
@@ -117,6 +120,7 @@ class EventController extends BaseController {
                     $csvData .= $row->group_name . ', ';
                     $csvData .= $row->preferred_name . ', ';
                 }
+                $csvData .= $row->created . ', ';
                 $csvData .= $row->email . ', ';
                 $csvData .= $row->partner;
                 if ($event->booking1 !== '') {
@@ -139,14 +143,14 @@ class EventController extends BaseController {
             echo $csvData;
             exit;
         }
-         echo '<h2>Booking Reports</h2>';
-// echo '2 mode is ' . $mode . '<br>';       
+        echo '<h2>Booking Reports</h2>';
+// echo '2 mode is ' . $mode . '<br>';
         // Display HTML view (preview or alpha mode)
         echo $this->toolsHelper->showPrint($target);
         $label = 'Download as CSV';
         $target = $self . '&sort=' . $sort . '&mode=csv';
         echo $this->toolsHelper->buildButton($target, $label, false, 'darkgreen');
-        
+
         if ($mode !== 'alpha') {
             if ($sort == 'name') {
                 $label = 'Sort by Group';
@@ -171,7 +175,7 @@ class EventController extends BaseController {
             $target = $self . '&mode=alpha';
             echo $this->toolsHelper->buildButton($target, $label, false, 'darkgreen');
         }
-        
+
         echo '<h3>' . $event->event_type . '</h3>';
         if ($event->event_type_id == 4) {  // Holiday
             echo '<h2>' . HTMLHelper::_('date', $event->event_date, 'd-M-y') . ' to ';
@@ -183,7 +187,7 @@ class EventController extends BaseController {
 
         if ($mode == 'preview') {
             $objTable = new ToolsTable();
-            $objTable->add_header($title);
+            $objTable->add_header($column_headings . ",Special requests");
             foreach ($rows as $row) {
                 if ($sort == 'name') {
                     $objTable->add_item($row->preferred_name);
@@ -192,7 +196,7 @@ class EventController extends BaseController {
                     $objTable->add_item($row->group_name);
                     $objTable->add_item($row->preferred_name);
                 }
-
+                $objTable->add_item($row->created);
                 $objTable->add_item($row->email);
                 $objTable->add_item($row->partner);
                 if ($event->booking1 !== '') {
@@ -201,6 +205,7 @@ class EventController extends BaseController {
                 if ($event->booking2 !== '') {
                     $objTable->add_item($row->custom2);
                 }
+                $objTable->add_item($row->special_request);
                 $objTable->generate_line();
             }
             $objTable->generate_table();
@@ -217,8 +222,9 @@ class EventController extends BaseController {
                 echo $name . '<br>';
             }
         }
-        
+
         $back = 'index.php?option=com_ra_events&view=event&id=' . $event_id;
+        $back .= '&Itemid=' . $menu_id;
         echo $this->toolsHelper->backButton($back);
     }
 
@@ -357,6 +363,18 @@ class EventController extends BaseController {
         } else {
             throw new \Exception(Text::_('JERROR_ALERTNOAUTHOR'), 403);
         }
+    }
+
+    public function registerEmails() {
+        // count the number of attendees
+        $event_id = $this->app->input->getInt('id', '0');
+        $mailshot_id = $this->app->input->getInt('mailshot_id', '0');
+        $eventsHelper = new EventsHelper;
+        $attendee_count = $eventsHelper->countAttendees($event_id);
+        echo 'Attendees for event id ' . $event_id . ': ' . $attendee_count . '<br>';
+//        $eventsHelper->updateOutstanding($mailshot_id, $attendee_count);
+        // Redirect to the display screen.
+        $this->setRedirect(Route::_('index.php?option=com_ra_events&view=event&id=' . $event_id, false));
     }
 
     /**
@@ -498,29 +516,29 @@ class EventController extends BaseController {
         echo $this->toolsHelper->backButton($back);
     }
 
-    public function showTerms(){
+    public function showTerms() {
         $title = 'Bookings: Terms and Conditions';
         $sql = 'SELECT `introtext` from #__content WHERE title="' . $title . '"';
 //        echo $sql;
         $introtext = $this->toolsHelper->getValue($sql);
         if (is_null($introtext) OR ($introtext == '')) {
-  echo '<h2>Terms of Use</h2>';
+            echo '<h2>Terms of Use</h2>';
 
-echo 'We store details of your real name and email address for the purposes of communicating to you by email and for managing bookings that you make for Events.' . '<br><br>';
+            echo 'We store details of your real name and email address for the purposes of communicating to you by email and for managing bookings that you make for Events.' . '<br><br>';
 
-echo 'In addition, we hold a "preferred name" of your choice, and this is shown above. '
- . 'The organiser of the Event will only be able to see this "preferred name" when using reports from the system.' . '<br><br>';
+            echo 'In addition, we hold a "preferred name" of your choice, and this is shown above. '
+            . 'The organiser of the Event will only be able to see this "preferred name" when using reports from the system.' . '<br><br>';
 
-echo 'We will never share your personal data with any other organisation. ' . '<br>';
+            echo 'We will never share your personal data with any other organisation. ' . '<br>';
         } else {
-        echo $introtext . '<br>';
-    }
-         echo $this->toolsHelper->backButton($back);
+            echo $introtext . '<br>';
+        }
+        echo $this->toolsHelper->backButton($back);
     }
 
-    public function test(){
+    public function test() {
         $bookingHelper = new BookingHelper;
-        $bookingHelper->sendAcknowledgement(106,1);
-
+        $bookingHelper->sendAcknowledgement(106, 1);
     }
+
 }

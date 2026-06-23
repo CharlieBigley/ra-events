@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 30/03/26 GPT copied from com_ra_mailman -->
+<form addfieldprefix="Ramblers\Component\Ra_tools\Administrator\Field">
+  <fieldset>
+    <field name="id" type="text" readonly="true" class="readonly" default="0" description="JGLOBAL_FIELD_ID_DESC"/>
+    <field
+        name="title"
+        type="textfield"
+        label="Title"
+        description="Title for the mailshot"
+        required="true"
+        class="input-xxlarge"
+        default=""
+    />
+    <field
+         name="body"
+         type="editor"
+         label="Content"
+         description="Content of the email"
+         filter="raw"
+         required="true"
+         default=""
+         />
+    <field
+        name="event_id"
+        type="hidden"
+        label="Event ID"
+        required="false"
+        readonly="true"
+        />      
+    <field 
+        name="attachment" 
+        type="file" 
+        label="Attachment"
+        description="Name of the data file on your computer"/>
+    <field
+        name="record_type"
+        type="hidden"
+        label="Record Type"
+        default="E"
+        />      
+    <field
+        name="state"
+        type="list"
+        label="Status"
+        description="Active/Deleted"
+        class="inputbox"
+        size="1"
+        default="0"
+        >
+        <option value="1">Active</option>
+        <option value="0">Deleted</option>
+    </field>
+  </fieldset>
+</form>
