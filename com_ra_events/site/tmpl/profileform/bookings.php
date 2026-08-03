@@ -54,22 +54,22 @@ if (count($rows) == 0) {
     echo 'You have not yet made any bookings<br>';
 } else {
     echo '<h2>Events you have booked on</h2>';
-    $objTable = new ToolsTable;
-    $objTable->add_header('Group,Date,Event,Type,Max');
+    $toolsTable = new ToolsTable;
+    $toolsTable->add_header('Group,Date,Event,Type,Max');
     $rows = $toolsHelper->getRows($sql);
     foreach ($rows as $row) {
-        $objTable->add_item($row->group_code);
+        $toolsTable->add_item($row->group_code);
         $date = $row->event_time . ' ' . HTMLHelper::_('date', $row->event_date, 'D d/m/y');
-        $objTable->add_item($date);
-        $objTable->add_item($row->title);
-        $objTable->add_item($row->description);
-//        $objTable->add_item($row->max_bookings);
+        $toolsTable->add_item($date);
+        $toolsTable->add_item($row->title);
+        $toolsTable->add_item($row->description);
+//        $toolsTable->add_item($row->max_bookings);
 // $bookable, $event_id, $callback, $buttons = true
         $bookings = $bookingHelper->showBookings($row->bookable, $row->id, $this->menu_id, '', false);
-        $objTable->add_item($bookings);
-        $objTable->generate_line();
+        $toolsTable->add_item($bookings);
+        $toolsTable->generate_line();
     }
-    $objTable->generate_table();
+    $toolsTable->generate_table();
     if (count($rows) > 1) {
         echo count($rows) . ' Bookings<br>';
     }

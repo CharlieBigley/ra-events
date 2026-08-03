@@ -186,29 +186,29 @@ class EventController extends BaseController {
         echo ' <b>' . $event->title . '</b></h2>';
 
         if ($mode == 'preview') {
-            $objTable = new ToolsTable();
-            $objTable->add_header($column_headings . ",Special requests");
+            $toolsTable = new ToolsTable();
+            $toolsTable->add_header($column_headings . ",Special requests");
             foreach ($rows as $row) {
                 if ($sort == 'name') {
-                    $objTable->add_item($row->preferred_name);
-                    $objTable->add_item($row->group_name);
+                    $toolsTable->add_item($row->preferred_name);
+                    $toolsTable->add_item($row->group_name);
                 } else {
-                    $objTable->add_item($row->group_name);
-                    $objTable->add_item($row->preferred_name);
+                    $toolsTable->add_item($row->group_name);
+                    $toolsTable->add_item($row->preferred_name);
                 }
-                $objTable->add_item($row->created);
-                $objTable->add_item($row->email);
-                $objTable->add_item($row->partner);
+                $toolsTable->add_item($row->created);
+                $toolsTable->add_item($row->email);
+                $toolsTable->add_item($row->partner);
                 if ($event->booking1 !== '') {
-                    $objTable->add_item($row->custom1);
+                    $toolsTable->add_item($row->custom1);
                 }
                 if ($event->booking2 !== '') {
-                    $objTable->add_item($row->custom2);
+                    $toolsTable->add_item($row->custom2);
                 }
-                $objTable->add_item($row->special_request);
-                $objTable->generate_line();
+                $toolsTable->add_item($row->special_request);
+                $toolsTable->generate_line();
             }
-            $objTable->generate_table();
+            $toolsTable->generate_table();
         } elseif ($mode == 'alpha') {
             $names = [];
             foreach ($rows as $row) {
@@ -470,8 +470,8 @@ class EventController extends BaseController {
         $target .= '&Itemid=' . $this->menu_id;
         $target .= '&id=';
 
-        $objTable = new ToolsTable();
-        $objTable->add_header("Type,Date,Title,Body,From,To,");
+        $toolsTable = new ToolsTable();
+        $toolsTable->add_header("Type,Date,Title,Body,From,To,");
         $sql = 'SELECT id, record_type, date_sent, title, body, ';
         $sql .= 'sender_name, addressee_name ';
         $sql .= 'FROM #__ra_emails ';
@@ -482,26 +482,26 @@ class EventController extends BaseController {
         $total = count($rows);
         foreach ($rows as $row) {
             $type = EventsHelper::emailType($row->record_type);
-            $objTable->add_item($type);
-            $objTable->add_item(HTMLHelper::_('date', $row->date_sent, 'H:i d/m/y'));
-            $objTable->add_item($row->title);
+            $toolsTable->add_item($type);
+            $toolsTable->add_item(HTMLHelper::_('date', $row->date_sent, 'H:i d/m/y'));
+            $toolsTable->add_item($row->title);
             if (strlen($row->body) > 516) {
                 $body = strip_tags(substr($row->body, 0, 516)) . ' ....';
 //        $link = '';
-//        echo $this->objHelper->buildLink($link, 'Read more', true, 'readmore') . PHP_EOL;
+//        echo $this->toolsHelper->buildLink($link, 'Read more', true, 'readmore') . PHP_EOL;
             } else {
                 $body = strip_tags(rtrim($row->body));
             }
-            $objTable->add_item($body);
-            $objTable->add_item($row->sender_name);
-            $objTable->add_item($row->addressee_name);
+            $toolsTable->add_item($body);
+            $toolsTable->add_item($row->sender_name);
+            $toolsTable->add_item($row->addressee_name);
 
             $info = $this->toolsHelper->imageButton('I', $target . $row->id);
-            $objTable->add_item($info);
-            $objTable->generate_line();
+            $toolsTable->add_item($info);
+            $toolsTable->generate_line();
         }
 
-        $objTable->generate_table();
+        $toolsTable->generate_table();
         echo 'Total number of emails ' . $total . '<br>';
 //      Always return to view event, bur ensure it in turn can return to
 //      its calling program

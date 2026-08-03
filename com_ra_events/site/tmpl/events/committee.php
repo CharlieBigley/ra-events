@@ -44,7 +44,7 @@ $wa = $this->document->getWebAssetManager();
 $wa->registerAndUseStyle('ramblers', 'com_ra_tools/ramblers.css');
 
 $target = "index.php?option=com_ra_events&view=event&tmpl=component&Itemid=" . $this->menu_id . '&id=';
-$objHelper = new ToolsHelper();
+$toolsHelper = new ToolsHelper();
 
 // Find the next scheduled Event
 // first find yesterday's date
@@ -56,7 +56,7 @@ $sql = "SELECT id from #__ra_events ";
 $sql .= "WHERE (datediff(event_date, '" . $yesterday . "') > 0 ) ";
 $sql .= "AND event_type_id=' . $this->event_type_id . ' AND state=1 ";
 $sql .= "ORDER BY event_date ASC LIMIT 1";
-$next_id = $objHelper->getValue($sql);
+$next_id = $toolsHelper->getValue($sql);
 $target = 'index.php?option=com_ra_events&view=event&Itemid=' . $this->menu_id;
 $target .= '&layout=' . $this->layout . '&id=';
 ?>
@@ -192,7 +192,7 @@ $target .= '&layout=' . $this->layout . '&id=';
                             echo '-';
                         } else {
                             echo 'Y';
-                            echo $objHelper->imageButton("I", $target . $item->id . '&mode=A');
+                            echo $toolsHelper->imageButton("I", $target . $item->id . '&mode=A');
                         }
                         echo '</td>';
 
@@ -201,7 +201,7 @@ $target .= '&layout=' . $this->layout . '&id=';
                             echo '-';
                         } else {
                             echo 'Y';
-                            echo $objHelper->imageButton("I", $target . $item->id . '&mode=R');
+                            echo $toolsHelper->imageButton("I", $target . $item->id . '&mode=R');
                         }
                         echo '</td>';
 
@@ -210,7 +210,7 @@ $target .= '&layout=' . $this->layout . '&id=';
                             echo '-';
                         } else {
                             echo 'Y';
-                            echo $objHelper->imageButton("I", $target . $item->id . '&mode=M');
+                            echo $toolsHelper->imageButton("I", $target . $item->id . '&mode=M');
                         }
                         echo '</td>';
                     } else {
@@ -226,7 +226,7 @@ $target .= '&layout=' . $this->layout . '&id=';
                         if ($label == '') {
                             $label = 'Y';
                         }
-                        echo $objHelper->buildLink($item->url, $label, true);
+                        echo $toolsHelper->buildLink($item->url, $label, true);
                     }
                     echo '</td>' . PHP_EOL;
 
@@ -243,7 +243,7 @@ $target .= '&layout=' . $this->layout . '&id=';
                         } else {
                             $target = $site->url . '/';
                         }    
-                        echo $objHelper->buildLink($target . $this->attachment_folder . '/' . $item->attachments, $label, true);
+                        echo $toolsHelper->buildLink($target . $this->attachment_folder . '/' . $item->attachments, $label, true);
                     }
                     echo '</td>';
                     if ($this->show_group == 1) {

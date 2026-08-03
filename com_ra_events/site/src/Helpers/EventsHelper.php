@@ -664,13 +664,13 @@ public function sendEmails($mailshot_id, $force='N') {
         $target = '&id=';
         ToolBarHelper::title('Shared events for ' . $website);
         $count = count($events);
-        $objTable = new ToolsTable();
-        $objTable->add_header('id,State,Date,Title,Group,Details,Bookable,Share_date,Contact');
+        $toolsTable = new ToolsTable();
+        $toolsTable->add_header('id,State,Date,Title,Group,Details,Bookable,Share_date,Contact');
         $target = $website . '/index.php?option=com_content&view=article&id=';
         $i = 0;
         foreach ($events as $event) {
             $id = $events[$i]['id'];
-            $objTable->add_item($id);
+            $toolsTable->add_item($id);
             $attributes = (object) $event['attributes'];
             if (JDEBUG) {
                 if ($i == 1) {
@@ -678,23 +678,23 @@ public function sendEmails($mailshot_id, $force='N') {
                     echo '<br>';
                 }   
             }         
-            $objTable->add_item($attributes->state);
-            $objTable->add_item($attributes->event_date);
-            $objTable->add_item($attributes->title);
-            $objTable->add_item($attributes->group_code);
+            $toolsTable->add_item($attributes->state);
+            $toolsTable->add_item($attributes->event_date);
+            $toolsTable->add_item($attributes->title);
+            $toolsTable->add_item($attributes->group_code);
 //         $text = $attributes[''];
-//          $link = $objHelper->buildLink($target . $id, $title, true);        
+//          $link = $toolsHelper->buildLink($target . $id, $title, true);        
             $text = strip_tags($attributes->details);
-            $objTable->add_item(substr($text, 0, 100) . '...');
-//            $objTable->add_item(substr($attributes->details, 0, 100) . '...');
-            $objTable->add_item($attributes->bookable);
-            $objTable->add_item(HTMLHelper::_('date', $attributes->share_date, 'd/M/y'));
-            $objTable->add_item($attributes->contact_name . '/' . $this->lookupContact($attributes->contact_name));
+            $toolsTable->add_item(substr($text, 0, 100) . '...');
+//            $toolsTable->add_item(substr($attributes->details, 0, 100) . '...');
+            $toolsTable->add_item($attributes->bookable);
+            $toolsTable->add_item(HTMLHelper::_('date', $attributes->share_date, 'd/M/y'));
+            $toolsTable->add_item($attributes->contact_name . '/' . $this->lookupContact($attributes->contact_name));
             $i++;
-            $objTable->generate_line();
+            $toolsTable->generate_line();
         }
 
-        $objTable->generate_table();
+        $toolsTable->generate_table();
         echo $count . ' Events found<br>';
         $back = 'administrator/index.php?option=com_ra_tools&view=apisites';
         $back .= '&id=' . $api_site_id;

@@ -49,7 +49,7 @@ $wa = $this->document->getWebAssetManager();
 $wa->registerAndUseStyle('ramblers', 'com_ra_tools/ramblers.css');
 
 //$target = "index.php?option=com_ra_events&view=event&tmpl=component&Itemid=" . $this->menu_id . '&id=';
-$objHelper = new ToolsHelper();
+$toolsHelper = new ToolsHelper();
 
 // Find the next scheduled Event
 // first find yesterday's date
@@ -61,7 +61,7 @@ $sql = "SELECT id from #__ra_events ";
 $sql .= "WHERE (datediff(event_date, '" . $yesterday . "') > 0 ) ";
 $sql .= "AND event_type_id=' . $this->event_type_id . ' AND state=1 ";
 $sql .= "ORDER BY event_date ASC LIMIT 1";
-$next_id = $objHelper->getValue($sql);
+$next_id = $toolsHelper->getValue($sql);
 $target_display = 'index.php?option=com_ra_events&view=event&Itemid=' . $this->menu_id;
 $target_display .= '&layout=' . $this->layout . '&id=';
 ?>
@@ -170,7 +170,7 @@ $target_display .= '&layout=' . $this->layout . '&id=';
                         if ($label == '') {
                             $label = 'Y';
                         }
-                        echo $objHelper->buildLink($item->url, $label, true);
+                        echo $toolsHelper->buildLink($item->url, $label, true);
                     }
                     echo '</td>' . PHP_EOL;
 
@@ -188,7 +188,7 @@ $target_display .= '&layout=' . $this->layout . '&id=';
                         } else {
                             $target = $site->url . '/';
                         }                       
-                        echo $objHelper->buildLink($target . $this->attachment_folder . '/' . $item->attachments, $label, true);
+                        echo $toolsHelper->buildLink($target . $this->attachment_folder . '/' . $item->attachments, $label, true);
                     }
                     echo '</td>';
                     echo '<td class="item-bookable">';

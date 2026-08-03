@@ -188,7 +188,7 @@ class EventController extends FormController {
         //       $this->toolsHelper->executeCommand($sql);
         //       $sql = 'DELETE FROM  `#__ra_import_reports` ';
         //       $sql .= 'WHERE list_id=' . $event_id;
-        //       $this->objHelper->executeCommand($sql);
+        //       $this->toolsHelper->executeCommand($sql);
 
         $sql = 'DELETE FROM  `#__ra_events` ';
         $sql .= 'WHERE id=' . $event_id;

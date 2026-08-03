@@ -97,7 +97,7 @@ class BookingController extends FormController {
         $helper->checkColumn('ra_api_sites', 'sub_system', 'A', 'VARCHAR(10) NOT NULL AFTER id; ');
 
 //        $sql = 'UPDATE #__ra_events SET publication_date="2025-05-01"';
-//        $this->objHelper->executeCommand($sql);
+//        $this->toolsHelper->executeCommand($sql);
         $sql = 'UPDATE #__ra_events SET bookable=0 WHERE bookable IS NULL';
         $toolsHelper->executeCommand($sql);
         $sql = 'UPDATE #__ra_events SET notify_organiser=0 WHERE notify_organiser IS NULL';

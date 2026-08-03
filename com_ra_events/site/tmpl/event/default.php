@@ -80,7 +80,7 @@ echo ' <b>' . $this->item->title . '</b></h2>';
   $target_print = "index.php?option=com_ra_events&view=event&tmpl=component&Itemid=" . $this->menu_id . '&id=';
   $target_print .= '&layout=' . $this->layout
   //      Show link that allows page to be printed
-  echo $objHelper->showPrint($target_print);
+  echo $toolsHelper->showPrint($target_print);
 
  */
 if ($this->item->location == "Zoom") {

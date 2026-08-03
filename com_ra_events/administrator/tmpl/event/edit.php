@@ -28,7 +28,7 @@ use \Joomla\CMS\Language\Text;
 use Ramblers\Component\Ra_tools\Site\Helpers\ToolsHelper;
 use Ramblers\Component\Ra_events\Site\Helpers\BookingHelper;
 
-$objHelper = new ToolsHelper;
+$toolsHelper = new ToolsHelper;
 $bookingHelper = new BookingHelper;
 //$eventsHelper = new EventsHelper;
 
@@ -92,7 +92,7 @@ if ($api_site_id > 0) {
             foreach ((array) $this->item->attachments as $fileSingle) {
                 if (!is_array($fileSingle)) {
                     $target = Route::_(Uri::root() . 'faults' . DIRECTORY_SEPARATOR . $fileSingle, false);
-                    echo $objHelper->buildLink($target, $fileSingle, true);
+                    echo $toolsHelper->buildLink($target, $fileSingle, true);
                     $imagesFiles[] = $fileSingle;
                 }
             }
@@ -181,7 +181,7 @@ if ($api_site_id > 0) {
          if ($this->item->bookable  == '1') {
             echo HTMLHelper::_('uitab.addTab', 'myTab', 'event5', 'Mailshots');
             $sql = 'SELECT date_sent, title FROM #__ra_mail_shots WHERE event_id=' . $this->item->id;
-            $mailshots = $objHelper->getRows($sql);
+            $mailshots = $toolsHelper->getRows($sql);
             if (count($mailshots) == 0) {
                 echo '<p>No mailshots have been sent for this event</p>';
             } else {

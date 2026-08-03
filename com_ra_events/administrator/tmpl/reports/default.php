@@ -1,6 +1,6 @@
 <?php
 /**
- * @version     2.3.4
+ * @version     2.5.1
  * @package     com_ra_events
  * @copyright   Copyright (C) 2020. All rights reserved.
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
@@ -16,6 +16,7 @@
  * 15/07/25 CB delete report for emails
  * 15/09/25 CB delete report for imported events
  * 13/10/25 bookingSummary
+ * 16/07/26 CV new formatting
  */
 defined('_JEXEC') or die;
 
@@ -35,6 +36,7 @@ ToolBarHelper::title('Reports for Events');
 // Import CSS
 $this->wa = $this->document->getWebAssetManager();
 $this->wa->registerAndUseStyle('ramblers', 'com_ra_tools/ramblers.css');
+$this->wa->registerAndUseStyle('dashboard', 'com_ra_tools/dashboard.css');
 
 $back = 'administrator/index.php?option=com_ra_tools&view=dashboard';
 $breadcrumbs = $toolsHelper->buildLink('administrator/index.php', 'Home Dashboard');
@@ -59,11 +61,9 @@ $reports = [
     <div id="j-main-container" class="span10">
         <div class="clearfix"> </div>
         <?php
-        echo '<ul>';
-        foreach ($reports as $caption => $task) {
-            echo '<li>' . $toolsHelper->buildLink($task, $caption) . '</li>';
-        }
-        echo '</ul>';
+        echo '<div class="dashboard-grid">';
+        echo $toolsHelper->buildDashboardReportBlock('System reports', $reports);
+        echo '</div>';
 
         echo $toolsHelper->backButton($back);
         ?>
@@ -72,5 +72,4 @@ $reports = [
     </div>
 </div>
 </form>
-<?php
-echo "<!-- End of code from ' . __file . ' -->" . PHP_EOL;
+

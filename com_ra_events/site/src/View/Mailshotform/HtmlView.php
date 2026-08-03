@@ -45,7 +45,7 @@ class HtmlView extends BaseHtmlView implements CurrentUserInterface {
         if (count($errors = $this->get('Errors'))) {
             throw new \Exception(implode("\n", $errors));
         }
-        $this->objHelper = new ToolsHelper;
+        $this->toolsHelper = new ToolsHelper;
         $this->eventsHelper = new EventsHelper;
 // Get the  id of the Event, passed as part of the URL
         $this->event_id = $app->input->getInt('event_id', '0');

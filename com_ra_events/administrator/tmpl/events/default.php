@@ -175,7 +175,7 @@ $target_send = 'administrator/index.php?option=com_ra_events&view=event&layout=s
                                     if ($label == '') {
                                         $label = 'Y';
                                     }
-                                    //echo $objHelper->buildLink('../images/com_ra_events/' . $this->attachment_folder . '/' . $item->attachments, $label, true);
+                                    //echo $toolsHelper->buildLink('../images/com_ra_events/' . $this->attachment_folder . '/' . $item->attachments, $label, true);
                                     echo $toolsHelper->buildLink('../images/com_ra_events/' . $item->attachments, $item->attachments, true);
                                 }
                                 echo '</td>';

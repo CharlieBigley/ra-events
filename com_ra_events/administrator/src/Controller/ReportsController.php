@@ -77,9 +77,9 @@ class ReportsController extends FormController {
 //        echo $sql;
 //        return;
         $rows = $this->toolsHelper->getRows($sql);
-        $objTable = new ToolsTable();
+        $toolsTable = new ToolsTable();
 //
-        $objTable->add_header("Event Date,Days to go,Type,Title,Num bookings,Tot places,Confirmed bookings,Prov bookings,id");
+        $toolsTable->add_header("Event Date,Days to go,Type,Title,Num bookings,Tot places,Confirmed bookings,Prov bookings,id");
         $sql_lookup = 'SELECT COUNT(id) as `count`, SUM(num_places) as `places` FROM #__ra_bookings ';
         $sql_lookup .= 'WHERE event_id=';
         foreach ($rows as $row) {
@@ -89,40 +89,40 @@ class ReportsController extends FormController {
             } else {
                 $date .= ' ' . $row->event_time;
             }
-            $objTable->add_item($date);
-            $objTable->add_item($row->days_to_go);
-            $objTable->add_item($row->description);
-            $objTable->add_item($row->title);
-            $objTable->add_item($row->num_bookings . '/' . $row->max_bookings);
+            $toolsTable->add_item($date);
+            $toolsTable->add_item($row->days_to_go);
+            $toolsTable->add_item($row->description);
+            $toolsTable->add_item($row->title);
+            $toolsTable->add_item($row->num_bookings . '/' . $row->max_bookings);
 
             $stats = $this->toolsHelper->getItem($sql_lookup . $row->id . ' AND state=1');
             if ($stats->count == 0) {
-                $objTable->add_item('');
-                $objTable->add_item('');
+                $toolsTable->add_item('');
+                $toolsTable->add_item('');
             } else {
-                $objTable->add_item($stats->count);
-                $objTable->add_item($stats->places);
+                $toolsTable->add_item($stats->count);
+                $toolsTable->add_item($stats->places);
             }
 
             $stats = $this->toolsHelper->getItem($sql_lookup . $row->id . ' AND state=0');
             if ($stats->count == 0) {
-                $objTable->add_item('');
+                $toolsTable->add_item('');
             } else {
-                $objTable->add_item($stats->count);
+                $toolsTable->add_item($stats->count);
             }
 
-            $objTable->add_item($row->id);
-            $objTable->generate_line();
+            $toolsTable->add_item($row->id);
+            $toolsTable->generate_line();
         }
-        $objTable->generate_table();
+        $toolsTable->generate_table();
         echo $this->toolsHelper->backButton($this->back);
     }
 
     public function bookingsByUser() {
         ToolBarHelper::title('Bookings by User');
         echo $this->breadcrumbs . '<br>';
-        $objTable = new ToolsTable();
-        $objTable->add_header('Group,Name,Count bookings,Count places, Count mail lists');
+        $toolsTable = new ToolsTable();
+        $toolsTable->add_header('Group,Name,Count bookings,Count places, Count mail lists');
         $sql = 'SELECT b.user_id, p.home_group, p.preferred_name, COUNT( b.id) AS num, ';
         $sql .= 'SUM(b.num_places) AS tot_places ';
         $sql .= 'FROM #__ra_profiles AS p INNER JOIN #__ra_bookings AS b ON b.user_id = p.id ';
@@ -131,18 +131,18 @@ class ReportsController extends FormController {
 
         $rows = $this->toolsHelper->getRows($sql);
         foreach ($rows as $row) {
-            $objTable->add_item($row->home_group);
-            $objTable->add_item($row->preferred_name);
-            $objTable->add_item($row->num);
-            $objTable->add_item($row->tot_places);
+            $toolsTable->add_item($row->home_group);
+            $toolsTable->add_item($row->preferred_name);
+            $toolsTable->add_item($row->num);
+            $toolsTable->add_item($row->tot_places);
             $sql = 'SELECT COUNT( s.id) ';
             $sql .= 'FROM #__ra_mail_subscriptions AS s ';
             $sql .= 'WHERE s.user_id=' . $row->user_id;
             $count = $this->toolsHelper->getValue($sql);
-            $objTable->add_item($count);
-            $objTable->generate_line();
+            $toolsTable->add_item($count);
+            $toolsTable->generate_line();
         }
-        $objTable->generate_table();
+        $toolsTable->generate_table();
         echo $this->toolsHelper->backButton($this->back);
     }
 
@@ -195,23 +195,23 @@ class ReportsController extends FormController {
         $sql .= 'ORDER BY c.id';
 
         $rows = $this->toolsHelper->getRows($sql);
-        $objTable = new ToolsTable();
+        $toolsTable = new ToolsTable();
 
         $sql = 'SELECT COUNT(id) FROM #__ra_events WHERE contact_id=';
         $target_drilldown = 'administrator/index.php?option=com_ra_events&task=reports.showEventsForContact';
-        $objTable->add_header('Contact name, Contact user_id, Real name, Preferred name, Email,Contact id,Events');
+        $toolsTable->add_header('Contact name, Contact user_id, Real name, Preferred name, Email,Contact id,Events');
         foreach ($rows as $row) {
             if ($row->published == 0) {
                 $details = '<div style="color:red">' . $row->contact . ' unpublished</div>';
             } else {
                 $details = $row->contact;
             }
-            $objTable->add_item($details);
-            $objTable->add_item($row->user_id);
-            $objTable->add_item($row->name);
-            $objTable->add_item($row->preferred_name);
-            $objTable->add_item($row->email);
-            $objTable->add_item($row->id);
+            $toolsTable->add_item($details);
+            $toolsTable->add_item($row->user_id);
+            $toolsTable->add_item($row->name);
+            $toolsTable->add_item($row->preferred_name);
+            $toolsTable->add_item($row->email);
+            $toolsTable->add_item($row->id);
             $count = $this->toolsHelper->getValue($sql . $row->id);
             $target = $target_drilldown . '&id=' . $row->id;
 //            $space = array(' ');
@@ -219,11 +219,11 @@ class ReportsController extends FormController {
 //            $name = str_replace($space, $hex, $row->preferred_name);
             $name = str_replace(' ', '', $row->preferred_name);
             $target .= '&name=' . $name;
-$objTable->add_item($this->toolsHelper->buildLink($target, $count));
-            $objTable->generate_line();
+$toolsTable->add_item($this->toolsHelper->buildLink($target, $count));
+            $toolsTable->generate_line();
         }
 
-        $objTable->generate_table();
+        $toolsTable->generate_table();
         echo count($rows) . ' Contacts<br>';
 
         echo $this->toolsHelper->backButton($this->back);
@@ -266,27 +266,27 @@ public function createProfiles() {
 
 //        $this->toolsHelper->showSql($sql);
         $rows = $this->toolsHelper->getRows($sql);
-        $objTable = new ToolsTable();
+        $toolsTable = new ToolsTable();
 //
-        $objTable->add_header("Event Date,Days to go,Type,Title,Publication date,Days to publication,id");
+        $toolsTable->add_header("Event Date,Days to go,Type,Title,Publication date,Days to publication,id");
         foreach ($rows as $row) {
-//            $objTable->add_item($row->api_site_id);
+//            $toolsTable->add_item($row->api_site_id);
             $date = HTMLHelper::_('date', $row->event_date, 'd M y');
             if ($row->event_type_id == 4) {
                 $date .= ' - ' . HTMLHelper::_('date', $row->event_date_end, 'd M y');
             } else {
                 $date .= ' ' . $row->event_time;
             }
-            $objTable->add_item($date);
-            $objTable->add_item($row->days_to_go);
-            $objTable->add_item($row->description);
-            $objTable->add_item($row->title);
-            $objTable->add_item($row->publication_date);
-            $objTable->add_item($row->pub_to_go);
-            $objTable->add_item($row->id);
-            $objTable->generate_line();
+            $toolsTable->add_item($date);
+            $toolsTable->add_item($row->days_to_go);
+            $toolsTable->add_item($row->description);
+            $toolsTable->add_item($row->title);
+            $toolsTable->add_item($row->publication_date);
+            $toolsTable->add_item($row->pub_to_go);
+            $toolsTable->add_item($row->id);
+            $toolsTable->generate_line();
         }
-        $objTable->generate_table();
+        $toolsTable->generate_table();
         echo $this->toolsHelper->backButton($this->back);
     }
 
@@ -323,23 +323,23 @@ public function missingProfiles() {
 //
 ////        $this->toolsHelper->showSql($sql);
 //        $rows = $this->toolsHelper->getRows($sql);
-//        $objTable = new ToolsTable();
+//        $toolsTable = new ToolsTable();
 //
-//        $objTable->add_header("Site,Original id,Event date,Type,Title,Share date,Contact,Group,id");
+//        $toolsTable->add_header("Site,Original id,Event date,Type,Title,Share date,Contact,Group,id");
 //        foreach ($rows as $row) {
-//            $objTable->add_item($row->api_site_id);
-//            $objTable->add_item($row->original_id);
-//            $objTable->add_item($row->Date);
-//            $objTable->add_item($row->description);
-//            $objTable->add_item($row->title);
-//            $objTable->add_item($row->share_date);
-//            $objTable->add_item($row->name);
-//            $objTable->add_item($row->group_code);
-//            $objTable->add_item($row->id);
-//            $objTable->generate_line();
+//            $toolsTable->add_item($row->api_site_id);
+//            $toolsTable->add_item($row->original_id);
+//            $toolsTable->add_item($row->Date);
+//            $toolsTable->add_item($row->description);
+//            $toolsTable->add_item($row->title);
+//            $toolsTable->add_item($row->share_date);
+//            $toolsTable->add_item($row->name);
+//            $toolsTable->add_item($row->group_code);
+//            $toolsTable->add_item($row->id);
+//            $toolsTable->generate_line();
 //        }
 //
-//        $objTable->generate_table();
+//        $toolsTable->generate_table();
 //        echo count($rows) . ' imported Events<br>';
 //        echo $this->toolsHelper->backButton($this->back);
 //    }
@@ -364,8 +364,8 @@ public function missingProfiles() {
         $sql .= 'ORDER BY e.event_date ';
 //        echo $sql . '<br>';
         $rows = $this->toolsHelper->getRows($sql);
-        $objTable = new ToolsTable;
-$objTable->add_header('Date,Type,Title,Contact,Places,Participants,Booking');
+        $toolsTable = new ToolsTable;
+$toolsTable->add_header('Date,Type,Title,Contact,Places,Participants,Booking');
         foreach ($rows as $row) {
             $date = HTMLHelper::_('date', $row->event_date, 'd M y');
             if ($row->event_type_id == 4) {
@@ -373,36 +373,36 @@ $objTable->add_header('Date,Type,Title,Contact,Places,Participants,Booking');
             } else {
                 $date .= ' ' . $row->event_time;
             }
-            $objTable->add_item($date);
+            $toolsTable->add_item($date);
 
-            $objTable->add_item($row->event_type);
-            $objTable->add_item($row->title);
+            $toolsTable->add_item($row->event_type);
+            $toolsTable->add_item($row->title);
             if (is_null($row->preferred_name)) {
                 $contact = $row->contact;
             } else {
                 $contact = $row->preferred_name;
             }
-            $objTable->add_item($contact);
-            $objTable->add_item($row->num_places);
+            $toolsTable->add_item($contact);
+            $toolsTable->add_item($row->num_places);
 
             if (is_null($row->partner)) {
-                $objTable->add_item($row->member);
+                $toolsTable->add_item($row->member);
             } else {
                 $bookings = $row->member;
                 if ($row->partner !== '') {
                     $bookings .= '/' . $row->partner;
                 }
-                $objTable->add_item($bookings);
+                $toolsTable->add_item($bookings);
             }
             $link = $this->toolsHelper->buildLink($target_edit . $row->id, 'Edit');
-            $objTable->add_item($link);
+            $toolsTable->add_item($link);
             if ($row->days_to_go < 0) {
-                $objTable->generate_line('red');
+                $toolsTable->generate_line('red');
             } else {
-                $objTable->generate_line();
+                $toolsTable->generate_line();
             }
         }
-        $objTable->generate_table();
+        $toolsTable->generate_table();
         $target = "administrator/index.php?option=com_ra_events&task=reports.showEventsByMonth";
         echo $this->toolsHelper->backButton($target);
     }
@@ -460,23 +460,23 @@ $this->query->where("SUBSTR(groups.code,1,2)='" . $opt . "'");
             echo '<h4>No future Events are being shared</h4>';
         } else {
             echo '<h4>Future Events that are being shared</h4>';
-            $objTable = new ToolsTable();
+            $toolsTable = new ToolsTable();
 
-            $objTable->add_header("Event date,Days,Type,Title,Location,Bookings,Contact,Share date,State");
+            $toolsTable->add_header("Event date,Days,Type,Title,Location,Bookings,Contact,Share date,State");
             foreach ($rows as $row) {
-                $objTable->add_item(HTMLHelper::_('date', $row->event_date, 'd-M-y'));
-                $objTable->add_item($row->days_to_go);
-                $objTable->add_item($row->description);
-                $objTable->add_item($row->title);
-                $objTable->add_item($row->location);
-                $objTable->add_item($row->num_bookings . '/' . $row->max_bookings);
-                $objTable->add_item($row->name);
-                $objTable->add_item(HTMLHelper::_('date', $row->share_date, 'd-M-y'));
-                $objTable->add_item($row->state);
-//                $objTable->add_item($row->id);
-                $objTable->generate_line();
+                $toolsTable->add_item(HTMLHelper::_('date', $row->event_date, 'd-M-y'));
+                $toolsTable->add_item($row->days_to_go);
+                $toolsTable->add_item($row->description);
+                $toolsTable->add_item($row->title);
+                $toolsTable->add_item($row->location);
+                $toolsTable->add_item($row->num_bookings . '/' . $row->max_bookings);
+                $toolsTable->add_item($row->name);
+                $toolsTable->add_item(HTMLHelper::_('date', $row->share_date, 'd-M-y'));
+                $toolsTable->add_item($row->state);
+//                $toolsTable->add_item($row->id);
+                $toolsTable->generate_line();
             }
-            $objTable->generate_table();
+            $toolsTable->generate_table();
             echo count($rows) . ' Events<br><br>';
         }
         // Show Shared Events from other sites
@@ -496,21 +496,21 @@ $this->query->where("SUBSTR(groups.code,1,2)='" . $opt . "'");
             echo '<h4>No shared Events have been imported</h4>';
         } else {
             echo '<h4>Events that have been imported</h4>';
-            $objTable = new ToolsTable();
+            $toolsTable = new ToolsTable();
 
-            $objTable->add_header("Site,Event date,Type,Title,Location,Bookings,Contact");
+            $toolsTable->add_header("Site,Event date,Type,Title,Location,Bookings,Contact");
             foreach ($rows as $row) {
-                $objTable->add_item($row->title);
-                $objTable->add_item(HTMLHelper::_('date', $row->event_date, 'd-M-y'));
-                $objTable->add_item($row->description);
-                $objTable->add_item($row->event);
-                $objTable->add_item($row->location);
-                $objTable->add_item($row->num_bookings . '/' . $row->max_bookings);
-                $objTable->add_item($row->name);
+                $toolsTable->add_item($row->title);
+                $toolsTable->add_item(HTMLHelper::_('date', $row->event_date, 'd-M-y'));
+                $toolsTable->add_item($row->description);
+                $toolsTable->add_item($row->event);
+                $toolsTable->add_item($row->location);
+                $toolsTable->add_item($row->num_bookings . '/' . $row->max_bookings);
+                $toolsTable->add_item($row->name);
 
-                $objTable->generate_line();
+                $toolsTable->generate_line();
             }
-            $objTable->generate_table();
+            $toolsTable->generate_table();
             echo count($rows) . ' Events<br>';
             if ($this->toolsHelper->isSuperuser()) {
                 $target = 'administrator/index.php?option=com_ra_tools&task=apisites.deleteSharedEvents';
@@ -535,21 +535,21 @@ $this->query->where("SUBSTR(groups.code,1,2)='" . $opt . "'");
         $sql .= ' ORDER BY e.event_date';
 //        echo $sql . '<br>';
         $rows = $this->toolsHelper->getRows($sql);
-        $objTable = new ToolsTable();
+        $toolsTable = new ToolsTable();
 
-        $objTable->add_header("Event date,Type,Title,Publication date,Bookable,Shareable,Share date");
+        $toolsTable->add_header("Event date,Type,Title,Publication date,Bookable,Shareable,Share date");
         foreach ($rows as $row) {
 
-            $objTable->add_item($row->event_date);
-            $objTable->add_item($row->description);
-            $objTable->add_item($row->title);
-            $objTable->add_item($row->publication_date);
-            $objTable->add_item($row->bookable);
-            $objTable->add_item($row->shareable);
-            $objTable->add_item($row->share_date);
-            $objTable->generate_line();
+            $toolsTable->add_item($row->event_date);
+            $toolsTable->add_item($row->description);
+            $toolsTable->add_item($row->title);
+            $toolsTable->add_item($row->publication_date);
+            $toolsTable->add_item($row->bookable);
+            $toolsTable->add_item($row->shareable);
+            $toolsTable->add_item($row->share_date);
+            $toolsTable->generate_line();
         }
-        $objTable->generate_table();
+        $toolsTable->generate_table();
         echo $this->toolsHelper->backButton($this->back);
     }
 
@@ -568,26 +568,26 @@ $this->query->where("SUBSTR(groups.code,1,2)='" . $opt . "'");
           //      Show link that allows page to be printed
           $target = 'index.php?option=com_ra_tools&task=reports.countUsers';
           echo $this->toolsHelper->showPrint($target) . '<br>' . PHP_EOL;
-          $objTable = new ToolsTable;
-          $objTable->add_header("Code,Group,Count,Earliest walk,Latest walk");
+          $toolsTable = new ToolsTable;
+          $toolsTable->add_header("Code,Group,Count,Earliest walk,Latest walk");
           $target = 'administrator/index.php?option=com_ra_tools&task=reports.showUsersForGroup&group=';
           foreach ($rows as $row) {
           if ($row->GroupCode == '') {
-          $objTable->add_item('');
+          $toolsTable->add_item('');
           } else {
           // URI cannot handle commas as part of the parameters
           //$param = str_replace(',', '%5C%2C%20', $row->GroupCode);
           $param = str_replace(',', '_', $row->GroupCode);
-$objTable->add_item($this->toolsHelper->buildLink($target . $param, $row->GroupCode));
-//$objTable->add_item($this->toolsHelper->buildLink($target . $row->GroupCode, $row->GroupCode));
+$toolsTable->add_item($this->toolsHelper->buildLink($target . $param, $row->GroupCode));
+//$toolsTable->add_item($this->toolsHelper->buildLink($target . $row->GroupCode, $row->GroupCode));
           }
-          $objTable->add_item($row->name);
-          $objTable->add_item($row->Number);
-          $objTable->add_item($row->Earliest);
-          $objTable->add_item($row->Latest);
-          $objTable->generate_line();
+          $toolsTable->add_item($row->name);
+          $toolsTable->add_item($row->Number);
+          $toolsTable->add_item($row->Earliest);
+          $toolsTable->add_item($row->Latest);
+          $toolsTable->generate_line();
           }
-          $objTable->generate_table();
+          $toolsTable->generate_table();
          *
          */
         echo $this->toolsHelper->backButton($this->back);
@@ -620,18 +620,18 @@ $objTable->add_item($this->toolsHelper->buildLink($target . $param, $row->GroupC
           //      Show link that allows page to be printed
           $target = 'index.php?option=com_ra_tools&task=reports.countUsers';
           echo $this->toolsHelper->showPrint($target) . '<br>' . PHP_EOL;
-          $objTable = new ToolsTable;
-          $objTable->add_header("Code,Group,Count,Earliest walk,Latest walk");
+          $toolsTable = new ToolsTable;
+          $toolsTable->add_header("Code,Group,Count,Earliest walk,Latest walk");
           $target = 'administrator/index.php?option=com_ra_tools&task=reports.showUsersForGroup&group=';
           foreach ($rows as $row) {
 
-          $objTable->add_item($row->name);
-          $objTable->add_item($row->Number);
-          $objTable->add_item($row->Earliest);
-          $objTable->add_item($row->Latest);
-          $objTable->generate_line();
+          $toolsTable->add_item($row->name);
+          $toolsTable->add_item($row->Number);
+          $toolsTable->add_item($row->Earliest);
+          $toolsTable->add_item($row->Latest);
+          $toolsTable->generate_line();
           }
-          $objTable->generate_table();
+          $toolsTable->generate_table();
          *
          */
         echo $this->toolsHelper->backButton($this->back);
@@ -661,8 +661,8 @@ $objTable->add_item($this->toolsHelper->buildLink($target . $param, $row->GroupC
         if (count($rows) == 0) {
             echo '<br>No Events found<br>';
         } else {
-            $objTable = new ToolsTable;
-$objTable->add_header('Date,Type,Title,Contact,Group,Bookable,bookings');
+            $toolsTable = new ToolsTable;
+$toolsTable->add_header('Date,Type,Title,Contact,Group,Bookable,bookings');
             foreach ($rows as $row) {
                 $date = HTMLHelper::_('date', $row->event_date, 'd M y');
                 if ($row->event_type_id == 4) {
@@ -670,24 +670,24 @@ $objTable->add_header('Date,Type,Title,Contact,Group,Bookable,bookings');
                 } else {
                     $date .= ' ' . $row->event_time;
                 }
-                $objTable->add_item($date);
+                $toolsTable->add_item($date);
 
-                $objTable->add_item($row->event_type);
-                $objTable->add_item($row->title);
+                $toolsTable->add_item($row->event_type);
+                $toolsTable->add_item($row->title);
                 if (is_null($row->preferred_name)) {
                     $contact = $row->contact;
                 } else {
                     $contact = $row->preferred_name;
                 }
-                $objTable->add_item($contact);
-                $objTable->add_item($row->group_code);
-                $objTable->add_item($row->bookable);
+                $toolsTable->add_item($contact);
+                $toolsTable->add_item($row->group_code);
+                $toolsTable->add_item($row->bookable);
                 $count = $bookingHelper->countBookings($row->id);
                 $bookings = $count . '/' . $row->max_bookings;
-                $objTable->add_item($bookings);
-                $objTable->generate_line();
+                $toolsTable->add_item($bookings);
+                $toolsTable->generate_line();
             }
-            $objTable->generate_table();
+            $toolsTable->generate_table();
             echo count($rows) . ' Events<br>';
         }
 
@@ -715,8 +715,8 @@ $objTable->add_header('Date,Type,Title,Contact,Group,Bookable,bookings');
         $sql .= 'ORDER BY e.event_date ';
         //       echo $sql . '<br>';
         $rows = $this->toolsHelper->getRows($sql);
-        $objTable = new ToolsTable;
-$objTable->add_header('Date,Type,Title,Contact,Group,Bookable,bookings');
+        $toolsTable = new ToolsTable;
+$toolsTable->add_header('Date,Type,Title,Contact,Group,Bookable,bookings');
         foreach ($rows as $row) {
             $date = HTMLHelper::_('date', $row->event_date, 'd M y');
             if ($row->event_type_id == 4) {
@@ -724,24 +724,24 @@ $objTable->add_header('Date,Type,Title,Contact,Group,Bookable,bookings');
             } else {
                 $date .= ' ' . $row->event_time;
             }
-            $objTable->add_item($date);
+            $toolsTable->add_item($date);
 
-            $objTable->add_item($row->event_type);
-            $objTable->add_item($row->title);
+            $toolsTable->add_item($row->event_type);
+            $toolsTable->add_item($row->title);
             if (is_null($row->preferred_name)) {
                 $contact = $row->contact;
             } else {
                 $contact = $row->preferred_name;
             }
-            $objTable->add_item($contact);
-            $objTable->add_item($row->group_code);
-            $objTable->add_item($row->bookable);
+            $toolsTable->add_item($contact);
+            $toolsTable->add_item($row->group_code);
+            $toolsTable->add_item($row->bookable);
             $count = $bookingHelper->countBookings($row->id);
             $bookings = $count . '/' . $row->max_bookings;
-            $objTable->add_item($bookings);
-            $objTable->generate_line();
+            $toolsTable->add_item($bookings);
+            $toolsTable->generate_line();
         }
-        $objTable->generate_table();
+        $toolsTable->generate_table();
         $target = "administrator/index.php?option=com_ra_events&task=reports.showEventsByMonth";
         echo $this->toolsHelper->backButton($target);
     }
@@ -753,9 +753,9 @@ $objTable->add_header('Date,Type,Title,Contact,Group,Bookable,bookings');
         $this->scope = $this->objApp->input->getCmd('scope', '');
         $csv = substr($this->objApp->input->getCmd('csv', ''), 0, 1);
 
-        $objTable = new ToolsTable();
+        $toolsTable = new ToolsTable();
 
-        $objTable->add_header("Date,Message");
+        $toolsTable->add_header("Date,Message");
         $sql = "SELECT date_amended, field_value ";
         $sql .= "FROM #__ra_groups_audit AS audit ";
         $sql .= "INNER JOIN #__ra_groups `groups` ON `groups`.id = audit.object_id ";
@@ -764,11 +764,11 @@ $objTable->add_header('Date,Type,Title,Contact,Group,Bookable,bookings');
         //        echo $sql;
         $rows = $this->toolsHelper->getRows($sql);
         foreach ($rows as $row) {
-            $objTable->add_item($row->date_amended);
-            $objTable->add_item($row->field_value);
-            $objTable->generate_line();
+            $toolsTable->add_item($row->date_amended);
+            $toolsTable->add_item($row->field_value);
+            $toolsTable->generate_line();
         }
-        $objTable->generate_table();
+        $toolsTable->generate_table();
         $back = "administrator/index.php?option=com_ra_tools&view=reports_group&group_code=" . $group_code . '&scope=' . $this->scope;
         echo $this->toolsHelper->backButton($back);
 //        if ($csv == '') {
@@ -781,10 +781,10 @@ $objTable->add_header('Date,Type,Title,Contact,Group,Bookable,bookings');
         $this->scope = $this->objApp->input->getCmd('scope', '');
         $csv = substr($this->objApp->input->getCmd('csv', ''), 0, 1);
         echo "<h2>Feed Summary</h2>";
-        $objTable = new ToolsTable();
-        $objTable->set_csv($csv);
+        $toolsTable = new ToolsTable();
+        $toolsTable->set_csv($csv);
 
-        $objTable->add_header("Date,Message");
+        $toolsTable->add_header("Date,Message");
         $sql = "SELECT log_date, message ";
         $sql .= "FROM #__ra_logfile ";
         $sql .= "WHERE record_type='B9' AND ref=2 ";
@@ -793,11 +793,11 @@ $objTable->add_header('Date,Type,Title,Contact,Group,Bookable,bookings');
         //        echo $sql;
         $rows = $this->toolsHelper->getRows($sql);
         foreach ($rows as $row) {
-            $objTable->add_item($row->log_date);
-            $objTable->add_item($row->message);
-            $objTable->generate_line();
+            $toolsTable->add_item($row->log_date);
+            $toolsTable->add_item($row->message);
+            $toolsTable->generate_line();
         }
-        $objTable->generate_table();
+        $toolsTable->generate_table();
         $back = "administrator/index.php?option=com_ra_tools&view=reports_area&area=NAT&scope=" . $this->scope;
         echo $this->toolsHelper->backButton($back);
         if ($csv == '') {
@@ -815,8 +815,8 @@ $objTable->add_header('Date,Type,Title,Contact,Group,Bookable,bookings');
         $area_code = 'NS';
         echo "<h2>Feed update for " . $this->toolsHelper->lookupArea($area) . "</h2>";
         $sql = "SELECT code from #__ra_groups where code LIKE '" . $area . "%' ORDER BY code";
-        $objTable = new ToolsTable();
-        $objTable->add_header("Group,Date,Message");
+        $toolsTable = new ToolsTable();
+        $toolsTable->add_header("Group,Date,Message");
 
         $groups = $this->toolsHelper->getRows($sql);
         $groups_count = $this->toolsHelper->rows;
@@ -835,14 +835,14 @@ $objTable->add_header('Date,Type,Title,Contact,Group,Bookable,bookings');
                     $groups_found++;
                     $current_group = $row->code;
                 }
-                $objTable->add_item($group->code);
-                $objTable->add_item($row->date_amended);
-                $objTable->add_item($row->field_value);
-                $objTable->generate_line();
+                $toolsTable->add_item($group->code);
+                $toolsTable->add_item($row->date_amended);
+                $toolsTable->add_item($row->field_value);
+                $toolsTable->generate_line();
             }
         }
 
-        $objTable->generate_table();
+        $toolsTable->generate_table();
         echo $groups_found . " groups out of " . $groups_count;
         $back = "administrator/index.php?option=com_ra_tools&view=reports_area&area=" . $area . '&scope=' . $this->scope;
         echo $this->toolsHelper->backButton($back);
@@ -895,11 +895,11 @@ $objTable->add_header('Date,Type,Title,Contact,Group,Bookable,bookings');
         $group_code = $this->objApp->input->getCmd('group_code', 'NS03');
         $scope = $this->objApp->input->getCmd('scope', 'F');
         echo "<h2>Walks history for " . $this->toolsHelper->lookupGroup($group_code) . "</h2>";
-        $objTable = new ToolsTable();
+        $toolsTable = new ToolsTable();
         if ($csv === 'Y') {
-            $objTable->set_csv('Summary');
+            $toolsTable->set_csv('Summary');
         }
-        $objTable->add_header("Month, Total walks,Joint walks,Guest walks,Total leaders,Total miles, Min miles,Max miles,Avg miles");
+        $toolsTable->add_header("Month, Total walks,Joint walks,Guest walks,Total leaders,Total miles, Min miles,Max miles,Avg miles");
         $sql = "SELECT ym,num_walks,joint_walks,guest_walks, ";
         $sql .= "num_leaders,total_miles,min_miles,max_miles,avg_miles ";
         $sql .= "FROM #__ra_snapshot ";
@@ -913,22 +913,22 @@ $objTable->add_header('Date,Type,Title,Contact,Group,Bookable,bookings');
             $total_miles += $row->total_miles;
             $total_walks += $row->num_walks;
 
-            $objTable->add_item($row->ym);
+            $toolsTable->add_item($row->ym);
             if ($row->num_walks == 0) {
-                $objTable->add_item('');
+                $toolsTable->add_item('');
             } else {
-                $objTable->add_item($row->num_walks);
+                $toolsTable->add_item($row->num_walks);
             }
-$objTable->add_item(number_format($row->joint_walks));
-            $objTable->add_item($row->guest_walks);
-            $objTable->add_item($row->num_leaders);
-            $objTable->add_item($row->total_miles);
-            $objTable->add_item($row->min_miles);
-            $objTable->add_item($row->max_miles);
-            $objTable->add_item($row->avg_miles);
-            $objTable->generate_line();
+$toolsTable->add_item(number_format($row->joint_walks));
+            $toolsTable->add_item($row->guest_walks);
+            $toolsTable->add_item($row->num_leaders);
+            $toolsTable->add_item($row->total_miles);
+            $toolsTable->add_item($row->min_miles);
+            $toolsTable->add_item($row->max_miles);
+            $toolsTable->add_item($row->avg_miles);
+            $toolsTable->generate_line();
         }
-        $objTable->generate_table();
+        $toolsTable->generate_table();
         echo 'Total walks: ' . $total_walks . ', Total miles: ' . $total_miles . '<br>';
 
         $back = "administrator/index.php?option=com_ra_tools&view=reports_group&group_code=" . $group_code . '&scope=' . $scope;

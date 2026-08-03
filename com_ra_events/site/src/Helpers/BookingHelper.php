@@ -21,6 +21,7 @@
  * 22/02/26 CB ensure user is logged in showBookings, disallow selection of users for past events
  * 25/02/26 CB changes to confirmation email
  * 06/04/26 CB move button to the top of the screen
+ * 03/08/26 CB use ToolsHelper to encode token
  */
 
 namespace Ramblers\Component\Ra_events\Site\Helpers;
@@ -380,23 +381,23 @@ class BookingHelper {
             $title .= ',' . $event->booking2;
         }
         if ($table == 'Y') {
-            $objTable = new ToolsTable();
-            $objTable->add_header($title);
+            $toolsTable = new ToolsTable();
+            $toolsTable->add_header($title);
             foreach ($rows as $row) {
-                $objTable->add_item($row->home_group);
-                $objTable->add_item($row->name);
-                $objTable->add_item($row->email);
-                $objTable->add_item($row->partner);
-                $objTable->add_item($row->special_request);
+                $toolsTable->add_item($row->home_group);
+                $toolsTable->add_item($row->name);
+                $toolsTable->add_item($row->email);
+                $toolsTable->add_item($row->partner);
+                $toolsTable->add_item($row->special_request);
                 if ($event->booking1 !== '') {
-                    $objTable->add_item($row->custom1);
+                    $toolsTable->add_item($row->custom1);
                 }
                 if ($event->booking2 !== '') {
-                    $objTable->add_item($row->custom2);
+                    $toolsTable->add_item($row->custom2);
                 }
-                $objTable->generate_line();
+                $toolsTable->generate_line();
             }
-            $objTable->generate_table();
+            $toolsTable->generate_table();
         } else {
             echo $title . '<br>';
             foreach ($rows as $row) {
@@ -420,6 +421,7 @@ class BookingHelper {
     public function generateInvitation($website_base, $event_id, $user_id) {
         $toolsHelper = new ToolsHelper;
         $token = $this->encode($event_id, $user_id, 1);
+//      $token = $toolsHelper->encodeToken($user_id, 1, $event_id, 0);
         echo "generateInvitation: event is $event_id, user is $user_id<br>";
         echo "generateInvitation: token is $token<br>";
         $sql = 'SELECT COUNT(id) FROM #__ra_profiles WHERE id=' . $user_id;

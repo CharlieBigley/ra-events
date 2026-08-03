@@ -77,12 +77,12 @@ class HtmlView extends BaseHtmlView implements CurrentUserInterface {
         // Find the maximum number of characters to show from the details
         $this->max_chars = $this->params->get('events_max_chars', 500);
 
-        $objHelper = new ToolsHelper;
+        $toolsHelper = new ToolsHelper;
         if ($this->event_type_id == 0) {
             $this->event_type = 'Event';
         } else {
             $sql = 'SELECT description FROM #__ra_event_types WHERE id=' . $this->event_type_id;
-            $this->event_type = $objHelper->getValue($sql);
+            $this->event_type = $toolsHelper->getValue($sql);
         }
 
         $menu_params = $app->getMenu()->getActive()->getParams();
@@ -157,8 +157,8 @@ class HtmlView extends BaseHtmlView implements CurrentUserInterface {
 
     public function lookupContact($contact_id) {
         $sql .= 'SELECT name FROM #__contact_details WHERE id=' . $contact_id;
-        $objHelper = new ToolsHelper;
-        return $objHelper->getValue($sql);
+        $toolsHelper = new ToolsHelper;
+        return $toolsHelper->getValue($sql);
     }
 
 }

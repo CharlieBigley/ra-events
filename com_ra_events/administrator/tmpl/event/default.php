@@ -25,7 +25,7 @@ use Joomla\Utilities\ArrayHelper;
 use Ramblers\Component\Ra_tools\Site\Helpers\ToolsHelper;
 use Ramblers\Component\Ra_events\Site\Helpers\BookingHelper;
 
-$objHelper = new ToolsHelper;
+$toolsHelper = new ToolsHelper;
 $bookingHelper = new BookingHelper;
 $objApp = JFactory::getApplication();
 $wa = $this->document->getWebAssetManager();

@@ -56,7 +56,7 @@ class ra_renewals extends JApplicationCli {
 
 // initialise the Helper classes
         $Mailhelper = new Mailhelper();
-        $objHelper = new ToolsHelper;
+        $toolsHelper = new ToolsHelper;
 
 //==============================================================================
 // find Subscription records close to their expiry date
@@ -77,15 +77,15 @@ class ra_renewals extends JApplicationCli {
         //       echo $sql . PHP_EOL;
 
 
-        $rows = $objHelper->getRows($sql);
-        $this->logMessage("R3", "Number of Subscriptions due=" . $objHelper->rows);
+        $rows = $toolsHelper->getRows($sql);
+        $this->logMessage("R3", "Number of Subscriptions due=" . $toolsHelper->rows);
         $sql = 'UPDATE #__ra_mail_subscriptions SET reminder_sent=CURRENT_DATE WHERE id=';
         if ($rows) {
             foreach ($rows as $row) {
                 $this->logMessage("R4", "id:" . $row->id . "," . $row->expiry_date);
                 if ($Mailhelper->sendRenewal($row->id)) {
                     echo $sql . $row->id . PHP_EOL;
-                    $objHelper->executeCommand($sql . $row->id);
+                    $toolsHelper->executeCommand($sql . $row->id);
                 }
             }
         }

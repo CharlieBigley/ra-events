@@ -20,7 +20,7 @@ use Ramblers\Component\Ra_tools\Site\Helpers\ToolsHelper;
 $wa = $this->document->getWebAssetManager();
 $wa->registerAndUseStyle('ramblers', 'com_ra_tools/ramblers.css');
 
-$objHelper = new ToolsHelper;
+$toolsHelper = new ToolsHelper;
 
 $objUserHelper = new UserHelper;
 $objUserHelper->list_id = $this->list_id;
@@ -35,19 +35,19 @@ if ($response) {
     if ($this->processing == '0') {
         echo 'If you continue, updates will be applied to the database.<br>';
         $target = 'administrator/index.php?option=com_ra_events&view=dataload';
-        echo $objHelper->buildButton($target, 'Cancel', False, 'granite');
+        echo $toolsHelper->buildButton($target, 'Cancel', False, 'granite');
         $target = 'administrator/index.php?option=com_ra_events&task=dataload.continue';
-        echo $objHelper->buildButton($target, 'Continue', False, 'red');
+        echo $toolsHelper->buildButton($target, 'Continue', False, 'red');
     } else {
         // Flush the data from the session..
         Factory::getApplication()->setUserState('com_ra_events.edit.upload.data', null);
 
         $target = 'administrator/index.php?option=com_ra_tools&view=dashboard';
-        echo $objHelper->backButton($target);
+        echo $toolsHelper->backButton($target);
     }
 } else {
     $target = 'administrator/index.php?option=com_ra_events&view=dataload';
-    echo $objHelper->backButton($target);
+    echo $toolsHelper->backButton($target);
 }
 
 

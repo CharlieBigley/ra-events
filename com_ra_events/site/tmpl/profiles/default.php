@@ -151,7 +151,7 @@ $canDelete = $this->user->authorise('core.delete', 'com_ra_events');
 //                        echo '<td>' . $item->creator . '</td>';
 //                                // Count how many bookings this user has
 //                                $sql = 'SELECT COUNT(id) FROM #__ra_bookings WHERE user_id=' . $item->id;
-//                                $count = $this->objHelper->getValue($sql);
+//                                $count = $this->toolsHelper->getValue($sql);
 //                                echo '<td>' . $count . '</td>';
 
                         echo '<td>' . $item->title . '</td>';
